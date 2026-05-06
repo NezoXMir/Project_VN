@@ -7,9 +7,14 @@
         <h1 class="text-2xl font-bold">Здравствуйте, {{ auth()->user()->name }}!</h1>
 
         <div class="flex items-center gap-3">
+            <a href="{{ route('goals.index') }}"
+               class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm">
+                Мои цели
+            </a>
+
             @if (auth()->user()->isAdmin())
                 <a href="{{ route('admin.users.index') }}"
-                   class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm">
+                   class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm">
                     Пользователи
                 </a>
             @endif

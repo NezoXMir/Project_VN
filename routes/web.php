@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\GoalController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -30,6 +31,15 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     Route::view('/dashboard', 'dashboard')->name('dashboard');
+
+    Route::resource('goals', GoalController::class)
+        ->whereNumber('goal');
+    Route::post('/goals/{goal}/archive', [GoalController::class, 'archive'])
+        ->whereNumber('goal')
+        ->name('goals.archive');
+    Route::post('/goals/{goal}/complete', [GoalController::class, 'complete'])
+        ->whereNumber('goal')
+        ->name('goals.complete');
 
     Route::middleware('admin')
         ->prefix('admin')
