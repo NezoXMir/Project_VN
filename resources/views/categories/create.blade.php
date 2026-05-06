@@ -16,6 +16,7 @@
             'action' => route('categories.store'),
             'method' => 'POST',
             'palette' => $palette,
+            'userPalette' => $userPalette,
             'submitLabel' => 'Создать',
         ])
     </div>

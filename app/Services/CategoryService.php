@@ -30,6 +30,21 @@ class CategoryService
             ->get();
     }
 
+    /**
+     * Уникальные hex-цвета, которые пользователь уже использовал в своих
+     * категориях. Для секции «Твои цвета» в форме создания/редактирования.
+     */
+    public function userColorsFor(int $userId): array
+    {
+        return Category::query()
+            ->ownedBy($userId)
+            ->orderByDesc('created_at')
+            ->pluck('color')
+            ->unique()
+            ->values()
+            ->all();
+    }
+
     public function create(int $userId, array $data): Category
     {
         return Category::create([

@@ -16,6 +16,7 @@
             'action' => route('categories.update', $category->id),
             'method' => 'PATCH',
             'palette' => $palette,
+            'userPalette' => $userPalette,
             'category' => $category,
             'submitLabel' => 'Сохранить',
         ])

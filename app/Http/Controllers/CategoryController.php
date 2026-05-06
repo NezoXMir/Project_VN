@@ -43,6 +43,7 @@ class CategoryController extends Controller
     {
         return view('categories.create', [
             'palette' => self::PALETTE,
+            'userPalette' => $this->userPaletteFor((int) Auth::id()),
         ]);
     }
 
@@ -70,6 +71,7 @@ class CategoryController extends Controller
         return view('categories.edit', [
             'category' => $model,
             'palette' => self::PALETTE,
+            'userPalette' => $this->userPaletteFor((int) Auth::id()),
         ]);
     }
 
@@ -97,5 +99,17 @@ class CategoryController extends Controller
         return redirect()
             ->route('categories.index')
             ->with('success', 'Категория удалена.');
+    }
+
+    /**
+     * Уникальные цвета пользователя минус пресеты — для секции «Твои цвета»
+     * в форме создания/редактирования.
+     */
+    private function userPaletteFor(int $userId): array
+    {
+        return collect($this->categories->userColorsFor($userId))
+            ->reject(fn (string $hex) => in_array($hex, self::PALETTE, true))
+            ->values()
+            ->all();
     }
 }

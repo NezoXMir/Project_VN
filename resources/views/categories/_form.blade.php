@@ -1,13 +1,16 @@
 {{-- Параметры:
      $action  — URL для action атрибута формы
      $method  — 'POST' или 'PATCH'
-     $palette — массив hex-цветов для пресетов
+     $palette — массив hex-цветов для системных пресетов
+     $userPalette — массив hex-цветов из существующих категорий
+                    пользователя (минус пресеты); может быть пустым
      $category — опционально, для edit
      $submitLabel — текст кнопки сохранения --}}
 
 @php
     $current = old('color', $category->color ?? $palette[0]);
     $label = old('label', $category->label ?? '');
+    $userPalette = $userPalette ?? [];
 @endphp
 
 @if ($errors->any())
@@ -37,16 +40,31 @@
     <div>
         <label class="block text-sm font-medium text-gray-700 mb-2">Цвет</label>
 
+        <div class="text-xs text-gray-500 mb-1">Стандартные:</div>
         <div class="flex flex-wrap items-center gap-2 mb-3">
             @foreach ($palette as $hex)
                 <button type="button"
                         @click="color = '{{ $hex }}'"
                         :class="color === '{{ $hex }}' ? 'ring-2 ring-offset-2 ring-gray-700' : ''"
                         class="w-8 h-8 rounded-full border border-gray-200 hover:scale-110 transition"
-                        style="background-color: '{{ $hex }}'"
+                        style="background-color: {{ $hex }}"
                         title="{{ $hex }}"></button>
             @endforeach
         </div>
+
+        @if (! empty($userPalette))
+            <div class="text-xs text-gray-500 mb-1">Твои цвета:</div>
+            <div class="flex flex-wrap items-center gap-2 mb-3">
+                @foreach ($userPalette as $hex)
+                    <button type="button"
+                            @click="color = '{{ $hex }}'"
+                            :class="color === '{{ $hex }}' ? 'ring-2 ring-offset-2 ring-gray-700' : ''"
+                            class="w-8 h-8 rounded-full border border-gray-200 hover:scale-110 transition"
+                            style="background-color: {{ $hex }}"
+                            title="{{ $hex }}"></button>
+                @endforeach
+            </div>
+        @endif
 
         <div class="flex items-center gap-3">
             <label for="color-picker" class="text-sm text-gray-600">Свой цвет:</label>
