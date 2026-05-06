@@ -9,9 +9,11 @@ class GoalService
 {
     public function listForUser(int $userId): Collection
     {
+        // Eager load `subtasks.tasks` подключится в Этапе 05, когда появятся
+        // модели Subtask/Task. Сейчас они не существуют — `with()` упадёт
+        // на autoload отсутствующего класса.
         return Goal::query()
             ->forUser($userId)
-            ->with(['subtasks.tasks'])
             ->orderByRaw("FIELD(status, 'active', 'completed', 'archived')")
             ->orderByDesc('created_at')
             ->get();
