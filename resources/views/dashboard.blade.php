@@ -6,13 +6,22 @@
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-bold">Здравствуйте, {{ auth()->user()->name }}!</h1>
 
-        <form method="POST" action="{{ route('logout') }}">
-            @csrf
-            <button type="submit"
-                    class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm">
-                Выйти
-            </button>
-        </form>
+        <div class="flex items-center gap-3">
+            @if (auth()->user()->isAdmin())
+                <a href="{{ route('admin.users.index') }}"
+                   class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm">
+                    Пользователи
+                </a>
+            @endif
+
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button type="submit"
+                        class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm">
+                    Выйти
+                </button>
+            </form>
+        </div>
     </div>
 
     @if (session('success'))
