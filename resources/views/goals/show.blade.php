@@ -3,12 +3,6 @@
 @section('title', $goal->title . ' — ' . config('app.name'))
 
 @php
-    $categoryBadges = [
-        'study' => 'bg-indigo-100 text-indigo-700',
-        'sport' => 'bg-emerald-100 text-emerald-700',
-        'work'  => 'bg-amber-100 text-amber-700',
-        'other' => 'bg-slate-100 text-slate-700',
-    ];
     $statusBadge = match ($goal->status) {
         'active'    => 'bg-blue-100 text-blue-700',
         'completed' => 'bg-green-100 text-green-700',
@@ -20,6 +14,8 @@
         'archived'  => 'в архиве',
     };
     $progress = $goal->progress;
+    $catColor = $goal->category?->color ?? '#64748B';
+    $catLabel = $goal->category?->label ?? 'без категории';
 @endphp
 
 @section('content')
@@ -72,12 +68,14 @@
         </div>
     @endif
 
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6 border-l-4"
+         style="border-left-color: {{ $catColor }}">
         <div class="flex items-start gap-3 mb-4">
             <div class="flex-1">
                 <div class="flex items-center gap-2 mb-2">
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $categoryBadges[$goal->category] }}">
-                        {{ $goal->categoryLabel() }}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                          style="background-color: {{ $catColor }}1A; color: {{ $catColor }}">
+                        {{ $catLabel }}
                     </span>
                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs {{ $statusBadge }}">
                         {{ $statusLabel }}
@@ -112,7 +110,7 @@
 
         <div class="mt-4">
             <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                <div class="h-full bg-indigo-500" style="width: {{ $progress }}%"></div>
+                <div class="h-full" style="width: {{ $progress }}%; background-color: {{ $catColor }}"></div>
             </div>
         </div>
     </div>

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\GoalRequest;
-use App\Models\Goal;
+use App\Services\CategoryService;
 use App\Services\GoalService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -11,24 +11,23 @@ use Illuminate\View\View;
 
 class GoalController extends Controller
 {
-    public function __construct(private readonly GoalService $goals)
-    {
+    public function __construct(
+        private readonly GoalService $goals,
+        private readonly CategoryService $categories,
+    ) {
     }
 
     public function index(): View
     {
-        $userId = (int) Auth::id();
-
         return view('goals.index', [
-            'goals' => $this->goals->listForUser($userId),
-            'categories' => Goal::CATEGORIES,
+            'goals' => $this->goals->listForUser((int) Auth::id()),
         ]);
     }
 
     public function create(): View
     {
         return view('goals.create', [
-            'categories' => Goal::CATEGORIES,
+            'categories' => $this->categories->listAvailable((int) Auth::id()),
         ]);
     }
 
@@ -56,7 +55,7 @@ class GoalController extends Controller
 
         return view('goals.edit', [
             'goal' => $model,
-            'categories' => Goal::CATEGORIES,
+            'categories' => $this->categories->listAvailable((int) Auth::id()),
         ]);
     }
 

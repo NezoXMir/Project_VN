@@ -17,23 +17,11 @@ class Goal extends Model
     public const STATUS_COMPLETED = 'completed';
     public const STATUS_ARCHIVED = 'archived';
 
-    public const CATEGORY_STUDY = 'study';
-    public const CATEGORY_SPORT = 'sport';
-    public const CATEGORY_WORK = 'work';
-    public const CATEGORY_OTHER = 'other';
-
-    public const CATEGORIES = [
-        self::CATEGORY_STUDY => 'Учёба',
-        self::CATEGORY_SPORT => 'Спорт',
-        self::CATEGORY_WORK => 'Работа',
-        self::CATEGORY_OTHER => 'Другое',
-    ];
-
     protected $fillable = [
         'user_id',
+        'category_id',
         'title',
         'description',
-        'category',
         'status',
         'deadline',
     ];
@@ -48,6 +36,11 @@ class Goal extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
     }
 
     public function subtasks(): HasMany
@@ -78,10 +71,5 @@ class Goal extends Model
 
             return (int) round($done / $total * 100);
         });
-    }
-
-    public function categoryLabel(): string
-    {
-        return self::CATEGORIES[$this->category] ?? $this->category;
     }
 }

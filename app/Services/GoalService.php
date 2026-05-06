@@ -14,6 +14,7 @@ class GoalService
         // на autoload отсутствующего класса.
         return Goal::query()
             ->forUser($userId)
+            ->with('category')
             ->orderByRaw("FIELD(status, 'active', 'completed', 'archived')")
             ->orderByDesc('created_at')
             ->get();
@@ -23,9 +24,9 @@ class GoalService
     {
         return Goal::create([
             'user_id' => $userId,
+            'category_id' => (int) $data['category_id'],
             'title' => $data['title'],
             'description' => $data['description'] ?? null,
-            'category' => $data['category'],
             'deadline' => $data['deadline'] ?? null,
             'status' => Goal::STATUS_ACTIVE,
         ]);
@@ -36,9 +37,9 @@ class GoalService
         $goal = $this->findOwned($goalId, $userId);
 
         $goal->fill([
+            'category_id' => (int) $data['category_id'],
             'title' => $data['title'],
             'description' => $data['description'] ?? null,
-            'category' => $data['category'],
             'deadline' => $data['deadline'] ?? null,
         ])->save();
 
@@ -76,7 +77,7 @@ class GoalService
 
     private function findOwned(int $goalId, int $userId): Goal
     {
-        $goal = Goal::find($goalId);
+        $goal = Goal::with('category')->find($goalId);
 
         if (! $goal) {
             abort(404);

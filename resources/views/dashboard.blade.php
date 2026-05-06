@@ -12,6 +12,11 @@
                 Мои цели
             </a>
 
+            <a href="{{ route('categories.index') }}"
+               class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm">
+                Категории
+            </a>
+
             @if (auth()->user()->isAdmin())
                 <a href="{{ route('admin.users.index') }}"
                    class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm">

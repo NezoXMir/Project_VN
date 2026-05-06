@@ -34,11 +34,13 @@
             </div>
 
             <div>
-                <label for="category" class="block text-sm font-medium text-gray-700 mb-1">Категория</label>
-                <select id="category" name="category" required
+                <label for="category_id" class="block text-sm font-medium text-gray-700 mb-1">Категория</label>
+                <select id="category_id" name="category_id" required
                         class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2 border bg-white">
-                    @foreach ($categories as $code => $label)
-                        <option value="{{ $code }}" @selected(old('category', $goal->category) === $code)>{{ $label }}</option>
+                    @foreach ($categories as $cat)
+                        <option value="{{ $cat->id }}" @selected((int) old('category_id', $goal->category_id) === $cat->id)>
+                            {{ $cat->label }}{{ $cat->is_system ? '' : ' (моя)' }}
+                        </option>
                     @endforeach
                 </select>
             </div>
