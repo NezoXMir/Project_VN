@@ -1,6 +1,7 @@
 # Этап 02 — Аутентификация (регистрация / вход / выход / роли)
 
 ## Цель
+
 Реализовать полноценную систему аутентификации с двумя ролями (`user` /
 `admin`): регистрация по email+пароль, вход с защитой сессии, выход с
 инвалидацией сессии и CSRF-токена, два кастомных middleware (`auth` и
@@ -10,6 +11,7 @@ Tailwind, начальный seeder с двумя тестовыми аккау�
 пользователями) и Этапу 04 (CRUD целей).
 
 ## Выполненные действия
+
 1. Запущены базовые миграции Laravel 11 (`php artisan migrate`):
    создались таблицы `users`, `password_reset_tokens`, `sessions`,
    `cache`, `cache_locks`, `jobs`, `job_batches`, `failed_jobs`,
@@ -23,8 +25,7 @@ Tailwind, начальный seeder с двумя тестовыми аккау�
    объявлены константы `ROLE_USER`/`ROLE_ADMIN`, добавлен метод
    `isAdmin(): bool` (сравнивает `$this->role === self::ROLE_ADMIN`).
 4. Создан `app/Http/Requests/RegisterRequest.php` — валидация
-   `name (required, string, max:120)`, `email (required, email,
-   max:160, unique:users,email)`, `password (required, min:8, confirmed)`.
+   `name (required, string, max:120)`, `email (required, email, max:160, unique:users,email)`, `password (required, min:8, confirmed)`.
    Сообщения валидации на русском.
 5. Создан `app/Http/Requests/LoginRequest.php` — `email`/`password`
    обязательные, формат email проверяется. Сообщения на русском.
@@ -81,9 +82,9 @@ Tailwind, начальный seeder с двумя тестовыми аккау�
     `User::updateOrCreate` по `email`:
     - `admin@example.com` / `password` (role: `admin`)
     - `user@example.com`  / `password` (role: `user`)
-    `updateOrCreate` выбран вместо `create`, чтобы
-    переплейстеп не падал на UNIQUE constraint
-    (см. Notes #4).
+      `updateOrCreate` выбран вместо `create`, чтобы
+      переплейстеп не падал на UNIQUE constraint
+      (см. Notes #4).
 16. Запущена `php artisan migrate` (применилась
     `add_role_to_users_table`) и
     `php artisan db:seed --class=AdminSeeder`.
@@ -103,6 +104,7 @@ Tailwind, начальный seeder с двумя тестовыми аккау�
 18. Создан `docs/stage-02-log.md` (этот файл).
 
 ## Созданные файлы
+
 - `app/Http/Controllers/AuthController.php`
 - `app/Http/Middleware/RequireAuth.php`
 - `app/Http/Middleware/RequireAdmin.php`
@@ -118,6 +120,7 @@ Tailwind, начальный seeder с двумя тестовыми аккау�
 - `docs/stage-02-log.md`
 
 ## Изменённые файлы
+
 - `app/Models/User.php` — добавлено `role` в `$fillable`,
   константы `ROLE_USER`/`ROLE_ADMIN`, метод `isAdmin()`.
 - `bootstrap/app.php` — добавлены alias-ы `auth` и `admin`
@@ -169,6 +172,7 @@ user-enumeration атак (нельзя через перебор узнать,
 зарегистрирован ли email в системе).
 
 ## Использованные команды
+
 ```bash
 # Базовые миграции (Этап 02 начинается с пустой БД)
 php artisan migrate
@@ -192,6 +196,7 @@ php artisan tinker --execute="..."   # см. ниже
 ```
 
 ## Как поднять и проверить
+
 ```bash
 # Если это свежий клон / fresh-сетап:
 cp .env.example .env
@@ -204,29 +209,30 @@ php artisan serve   # http://localhost:8000
 ```
 
 Smoke-чеклист:
+
 - [ ] `GET /` гостем → редирект на `/login`.
 - [ ] `GET /login` → форма входа (200, русский UI).
 - [ ] `GET /register` → форма регистрации (200).
 - [ ] `POST /login` с верными кредами `admin@example.com`
-      / `password` → редирект на `/dashboard`,
-      на дашборде роль `admin`.
+  / `password` → редирект на `/dashboard`,
+  на дашборде роль `admin`.
 - [ ] `POST /login` с неверным паролем → форма с ошибкой
-      «Неверный email или пароль.» (поле `email`).
+  «Неверный email или пароль.» (поле `email`).
 - [ ] `POST /logout` → редирект на `/login` с flash
-      «Вы вышли из аккаунта.», `/dashboard` снова
-      редиректит на `/login`.
+  «Вы вышли из аккаунта.», `/dashboard` снова
+  редиректит на `/login`.
 - [ ] `POST /register` (новый email, корректный пароль)
-      → автоматический логин + редирект на `/dashboard`.
+  → автоматический логин + редирект на `/dashboard`.
 - [ ] `POST /register` с паролем 7 символов → форма с
-      ошибкой «Пароль должен быть не короче 8 символов.».
+  ошибкой «Пароль должен быть не короче 8 символов.».
 - [ ] `POST /register` с уже существующим email → ошибка
-      «Пользователь с таким email уже существует.».
+  «Пользователь с таким email уже существует.».
 - [ ] `php artisan route:list` — присутствуют именованные
-      маршруты `home`, `login`, `register`, `logout`,
-      `dashboard`, `healthz`.
+  маршруты `home`, `login`, `register`, `logout`,
+  `dashboard`, `healthz`.
 - [ ] `php artisan tinker` →
-      `Auth::attempt(['email'=>'admin@example.com','password'=>'password'])`
-      → true; `Auth::user()->isAdmin()` → true.
+  `Auth::attempt(['email'=>'admin@example.com','password'=>'password'])`
+  → true; `Auth::user()->isAdmin()` → true.
 
 ## Notes (нетривиальные обоснования)
 
@@ -239,7 +245,6 @@ Smoke-чеклист:
    путь: её можно откатить (`php artisan migrate:rollback`),
    она не сломает уже накатанную схему. Аналогичный подход
    будем использовать дальше для всех изменений схемы.
-
 2. **Почему алиас `auth` переопределён на наш `RequireAuth`,
    а не использован встроенный `Illuminate\Auth\Middleware\Authenticate`.**
    Встроенный `Authenticate` редиректит на маршрут с именем
@@ -251,7 +256,6 @@ Smoke-чеклист:
    диагностика — стек ошибки указывает на наш файл, а не
    глубоко во vendor. Стоимость переопределения — нулевая,
    risk небольшой и контролируемый.
-
 3. **Почему `register()` сразу логинит пользователя
    без email verification.** В мастер-промпте email
    verification не упоминается ни разу. Дипломный проект —
@@ -260,7 +264,6 @@ Smoke-чеклист:
    потребуется — добавить `MustVerifyEmail` интерфейс и
    middleware `verified` тривиально, но сейчас это лишний
    функционал, который не приносит ценности комиссии.
-
 4. **Почему `AdminSeeder` использует `updateOrCreate`,
    а не `create`.** `create` падает на UNIQUE constraint
    при повторном запуске (`migrate --seed` или ручной
@@ -270,7 +273,6 @@ Smoke-чеклист:
    которые перезаписываются. Это даёт побочное удобство:
    если разработчик случайно поменял пароль admin
    через UI и хочет сбросить — повторный сидинг чинит.
-
 5. **Почему ошибка логина показывается в поле `email`,
    а не в поле `password` или в общем баннере.**
    Технически ошибка относится к комбинации, а не к
