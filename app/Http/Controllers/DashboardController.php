@@ -18,10 +18,12 @@ class DashboardController extends Controller
     public function index(): View
     {
         $userId = (int) Auth::id();
+        $user = Auth::user();
 
         return view('dashboard', [
             'stats' => $this->stats->dashboard($userId),
             'recommendations' => $this->recommendations->generate($userId),
+            'recentAchievements' => $user->achievements()->take(3)->get(),
         ]);
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\CategoryRequest;
+use App\Services\AchievementService;
 use App\Services\CategoryService;
 use DomainException;
 use Illuminate\Http\RedirectResponse;
@@ -26,8 +27,10 @@ class CategoryController extends Controller
         '#64748B', // slate
     ];
 
-    public function __construct(private readonly CategoryService $categories)
-    {
+    public function __construct(
+        private readonly CategoryService $categories,
+        private readonly AchievementService $achievements,
+    ) {
     }
 
     public function index(): View
@@ -49,15 +52,23 @@ class CategoryController extends Controller
 
     public function store(CategoryRequest $request): RedirectResponse
     {
+        $userId = (int) Auth::id();
         try {
-            $this->categories->create((int) Auth::id(), $request->validated());
+            $this->categories->create($userId, $request->validated());
         } catch (DomainException $e) {
             return back()->withInput()->with('error', $e->getMessage());
         }
 
+        $unlocked = $this->achievements->check($userId);
+        $message = 'Категория создана.';
+        if (! empty($unlocked)) {
+            $names = implode(', ', array_map(fn ($a) => $a->icon.' '.$a->name, $unlocked));
+            $message .= " Получено достижение: {$names}";
+        }
+
         return redirect()
             ->route('categories.index')
-            ->with('success', 'Категория создана.');
+            ->with('success', $message);
     }
 
     public function edit(int $category): View

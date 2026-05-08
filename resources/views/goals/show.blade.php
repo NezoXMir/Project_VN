@@ -81,6 +81,28 @@
 
     <div x-data="goalView({{ $goal->id }}, {{ $progress }}, '{{ $catColor }}', @js($subtasksJson))" class="space-y-6">
 
+        {{-- Toasts разблокированных достижений --}}
+        <div class="fixed top-4 right-4 z-50 space-y-2 max-w-sm" style="pointer-events: none;">
+            <template x-for="t in toasts" :key="t.id">
+                <div x-transition:enter="transition ease-out duration-300"
+                     x-transition:enter-start="opacity-0 translate-x-4"
+                     x-transition:enter-end="opacity-100 translate-x-0"
+                     x-transition:leave="transition ease-in duration-200"
+                     x-transition:leave-start="opacity-100"
+                     x-transition:leave-end="opacity-0"
+                     class="bg-white rounded-xl shadow-lg border border-indigo-200 p-4 flex items-start gap-3"
+                     style="pointer-events: auto;">
+                    <div class="text-3xl" x-text="t.icon"></div>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-xs font-semibold text-indigo-600 uppercase tracking-wide">Достижение</div>
+                        <div class="font-semibold text-gray-900" x-text="t.name"></div>
+                    </div>
+                    <button @click="dismissToast(t.id)" class="text-gray-400 hover:text-gray-600 text-lg leading-none">×</button>
+                </div>
+            </template>
+        </div>
+
+
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 border-l-4"
              style="border-left-color: {{ $catColor }}">
             <div class="flex items-start gap-3 mb-4">
@@ -249,6 +271,8 @@ function goalView(goalId, initialProgress, color, initialSubtasks) {
         subtasks: initialSubtasks.map(s => ({ ...s, editing: false, editTitle: s.title, newTaskTitle: '' })),
         newSubtaskTitle: '',
         error: '',
+        toasts: [],
+        nextToastId: 1,
 
         get totalTasks() {
             return this.subtasks.reduce((sum, s) => sum + s.tasks.length, 0);
@@ -357,7 +381,21 @@ function goalView(goalId, initialProgress, color, initialSubtasks) {
                 task.is_done = data.is_done;
                 this.progress = data.goal_progress;
                 this.error = '';
+
+                if (Array.isArray(data.unlocked_achievements) && data.unlocked_achievements.length > 0) {
+                    data.unlocked_achievements.forEach(a => this.showAchievementToast(a));
+                }
             } catch (e) { this.error = e.message; }
+        },
+
+        showAchievementToast(achievement) {
+            const id = this.nextToastId++;
+            this.toasts.push({ id, name: achievement.name, icon: achievement.icon });
+            setTimeout(() => this.dismissToast(id), 6000);
+        },
+
+        dismissToast(id) {
+            this.toasts = this.toasts.filter(t => t.id !== id);
         },
 
         async deleteTask(subtask, task) {

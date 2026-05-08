@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\GoalRequest;
+use App\Services\AchievementService;
 use App\Services\CategoryService;
 use App\Services\GoalService;
 use Illuminate\Http\RedirectResponse;
@@ -14,6 +15,7 @@ class GoalController extends Controller
     public function __construct(
         private readonly GoalService $goals,
         private readonly CategoryService $categories,
+        private readonly AchievementService $achievements,
     ) {
     }
 
@@ -88,10 +90,18 @@ class GoalController extends Controller
 
     public function complete(int $goal): RedirectResponse
     {
-        $this->goals->complete($goal, (int) Auth::id());
+        $userId = (int) Auth::id();
+        $this->goals->complete($goal, $userId);
+        $unlocked = $this->achievements->check($userId);
+
+        $message = 'Цель отмечена как завершённая.';
+        if (! empty($unlocked)) {
+            $names = implode(', ', array_map(fn ($a) => $a->icon.' '.$a->name, $unlocked));
+            $message .= " Получено достижение: {$names}";
+        }
 
         return redirect()
             ->route('goals.show', $goal)
-            ->with('success', 'Цель отмечена как завершённая.');
+            ->with('success', $message);
     }
 }

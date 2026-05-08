@@ -26,6 +26,11 @@ $cards = [
             Категории
         </a>
 
+        <a href="{{ route('achievements.index') }}"
+            class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm">
+            Достижения
+        </a>
+
         @if (auth()->user()->isAdmin())
         <a href="{{ route('admin.dashboard') }}"
             class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm">
@@ -104,14 +109,14 @@ $cards = [
         @foreach ($recommendations as $rec)
         @php
         $tone = match ($rec['severity']) {
-            'danger' => ['bg' => 'bg-red-50', 'border' => 'border-red-200', 'title' => 'text-red-900'],
-            'warning' => ['bg' => 'bg-amber-50', 'border' => 'border-amber-200', 'title' => 'text-amber-900'],
-            'info' => ['bg' => 'bg-indigo-50', 'border' => 'border-indigo-200', 'title' => 'text-indigo-900'],
+        'danger' => ['bg' => 'bg-red-50', 'border' => 'border-red-200', 'title' => 'text-red-900'],
+        'warning' => ['bg' => 'bg-amber-50', 'border' => 'border-amber-200', 'title' => 'text-amber-900'],
+        'info' => ['bg' => 'bg-indigo-50', 'border' => 'border-indigo-200', 'title' => 'text-indigo-900'],
         };
         $iconText = match ($rec['severity']) {
-            'danger' => '⚠️',
-            'warning' => '⚡',
-            'info' => '✨',
+        'danger' => '⚠️',
+        'warning' => '⚡',
+        'info' => '✨',
         };
         @endphp
         <li class="rounded-lg border {{ $tone['bg'] }} {{ $tone['border'] }} px-4 py-3">
@@ -203,6 +208,37 @@ $cards = [
         </ul>
         @endif
     </div>
+</div>
+
+{{-- Последние достижения --}}
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mt-6">
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold">Последние достижения</h2>
+        <a href="{{ route('achievements.index') }}"
+            class="text-sm text-indigo-600 hover:text-indigo-700">
+            Все →
+        </a>
+    </div>
+
+    @if ($recentAchievements->isEmpty())
+    <p class="text-sm text-gray-500 py-3">
+        Достижений пока нет — закройте первую задачу, и кое-что разблокируется.
+    </p>
+    @else
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        @foreach ($recentAchievements as $a)
+        <div class="rounded-lg border border-indigo-200 bg-indigo-50/40 p-3 flex items-center gap-3">
+            <div class="text-3xl">{{ $a->icon }}</div>
+            <div class="min-w-0">
+                <div class="font-semibold text-gray-900 truncate">{{ $a->name }}</div>
+                <div class="text-xs text-gray-500">
+                    {{ \Illuminate\Support\Carbon::parse($a->pivot->unlocked_at)->diffForHumans() }}
+                </div>
+            </div>
+        </div>
+        @endforeach
+    </div>
+    @endif
 </div>
 @endsection
 
