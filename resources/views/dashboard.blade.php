@@ -96,6 +96,44 @@ $cards = [
 </div>
 @endif
 
+{{-- Рекомендации --}}
+@if (! empty($recommendations))
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-6">
+    <h2 class="text-lg font-semibold mb-4">Рекомендации</h2>
+    <ul class="space-y-3">
+        @foreach ($recommendations as $rec)
+        @php
+        $tone = match ($rec['severity']) {
+            'danger' => ['bg' => 'bg-red-50', 'border' => 'border-red-200', 'title' => 'text-red-900'],
+            'warning' => ['bg' => 'bg-amber-50', 'border' => 'border-amber-200', 'title' => 'text-amber-900'],
+            'info' => ['bg' => 'bg-indigo-50', 'border' => 'border-indigo-200', 'title' => 'text-indigo-900'],
+        };
+        $iconText = match ($rec['severity']) {
+            'danger' => '⚠️',
+            'warning' => '⚡',
+            'info' => '✨',
+        };
+        @endphp
+        <li class="rounded-lg border {{ $tone['bg'] }} {{ $tone['border'] }} px-4 py-3">
+            <div class="flex items-start gap-3">
+                <div class="text-xl flex-shrink-0 leading-tight">{{ $iconText }}</div>
+                <div class="flex-1 min-w-0">
+                    <h3 class="font-semibold {{ $tone['title'] }}">{{ $rec['title'] }}</h3>
+                    <p class="text-sm text-gray-700 mt-1">{{ $rec['message'] }}</p>
+                </div>
+                @if (! empty($rec['action_url']))
+                <a href="{{ $rec['action_url'] }}"
+                    class="bg-white hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded-lg text-sm border border-gray-200 flex-shrink-0 whitespace-nowrap">
+                    {{ $rec['action_label'] ?? 'Перейти' }}
+                </a>
+                @endif
+            </div>
+        </li>
+        @endforeach
+    </ul>
+</div>
+@endif
+
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     {{-- График активности --}}
     <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 p-5">
