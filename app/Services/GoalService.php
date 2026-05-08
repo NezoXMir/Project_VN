@@ -9,12 +9,9 @@ class GoalService
 {
     public function listForUser(int $userId): Collection
     {
-        // Eager load `subtasks.tasks` подключится в Этапе 05, когда появятся
-        // модели Subtask/Task. Сейчас они не существуют — `with()` упадёт
-        // на autoload отсутствующего класса.
         return Goal::query()
             ->forUser($userId)
-            ->with('category')
+            ->with(['category', 'subtasks.tasks'])
             ->orderByRaw("FIELD(status, 'active', 'completed', 'archived')")
             ->orderByDesc('created_at')
             ->get();
@@ -77,7 +74,9 @@ class GoalService
 
     private function findOwned(int $goalId, int $userId): Goal
     {
-        $goal = Goal::with('category')->find($goalId);
+        $goal = Goal::with(['category', 'subtasks' => function ($q) {
+            $q->orderBy('position');
+        }, 'subtasks.tasks'])->find($goalId);
 
         if (! $goal) {
             abort(404);

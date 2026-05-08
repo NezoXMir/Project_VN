@@ -56,10 +56,6 @@ class Goal extends Model
     protected function progress(): Attribute
     {
         return Attribute::get(function (): int {
-            if (! $this->relationLoaded('subtasks') && ! \Schema::hasTable('tasks')) {
-                return 0;
-            }
-
             $tasks = $this->subtasks->flatMap->tasks ?? collect();
             $total = $tasks->count();
 

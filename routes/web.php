@@ -4,6 +4,8 @@ use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\GoalController;
+use App\Http\Controllers\SubtaskController;
+use App\Http\Controllers\TaskController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -45,6 +47,23 @@ Route::middleware('auth')->group(function () {
     Route::post('/goals/{goal}/complete', [GoalController::class, 'complete'])
         ->whereNumber('goal')
         ->name('goals.complete');
+
+    // Подцели и задачи — JSON-эндпоинты для AJAX из goals/show.
+    Route::post('/goals/{goal}/subtasks', [SubtaskController::class, 'store'])
+        ->whereNumber('goal')->name('subtasks.store');
+    Route::patch('/subtasks/{subtask}', [SubtaskController::class, 'update'])
+        ->whereNumber('subtask')->name('subtasks.update');
+    Route::delete('/subtasks/{subtask}', [SubtaskController::class, 'destroy'])
+        ->whereNumber('subtask')->name('subtasks.destroy');
+
+    Route::post('/subtasks/{subtask}/tasks', [TaskController::class, 'store'])
+        ->whereNumber('subtask')->name('tasks.store');
+    Route::patch('/tasks/{task}', [TaskController::class, 'update'])
+        ->whereNumber('task')->name('tasks.update');
+    Route::post('/tasks/{task}/toggle', [TaskController::class, 'toggle'])
+        ->whereNumber('task')->name('tasks.toggle');
+    Route::delete('/tasks/{task}', [TaskController::class, 'destroy'])
+        ->whereNumber('task')->name('tasks.destroy');
 
     Route::middleware('admin')
         ->prefix('admin')
