@@ -10,9 +10,9 @@
         </div>
 
         <div class="flex items-center gap-3">
-            <a href="{{ route('dashboard') }}"
+            <a href="{{ route('admin.dashboard') }}"
                class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm">
-                ← Дашборд
+                ← Админ-панель
             </a>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
