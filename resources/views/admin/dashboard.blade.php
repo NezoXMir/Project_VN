@@ -12,17 +12,7 @@
 @endphp
 
 @section('content')
-    {{-- Шапка отчёта (видна только при печати) --}}
-    <div class="hidden print:block mb-6 pb-4 border-b-2 border-gray-300">
-        <h1 class="text-2xl font-bold">Отчёт по системе «{{ config('app.name') }}»</h1>
-        <p class="text-sm text-gray-600 mt-1">
-            Сформирован: {{ $stats['generated_at']->format('d.m.Y H:i') }} ·
-            Администратор: {{ auth()->user()->name }}
-        </p>
-    </div>
-
-    {{-- Шапка экрана (скрывается при печати) --}}
-    <div class="flex items-center justify-between mb-6 no-print">
+    <div class="flex items-center justify-between mb-6">
         <div>
             <h1 class="text-2xl font-bold">Админ-панель</h1>
             <p class="text-sm text-gray-500 mt-1">Системная статистика — только агрегаты, без персональных данных.</p>
@@ -37,18 +27,13 @@
                class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm">
                 Пользователи
             </a>
-            <button type="button"
-                    onclick="window.print()"
-                    class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm">
-                🖨️ Экспорт в PDF
-            </button>
         </div>
     </div>
 
     {{-- KPI-карточки --}}
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 print-grid-4">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         @foreach ($cards as $c)
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 border-l-4 print-card"
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 border-l-4"
                  style="border-left-color: {{ $c['color'] }}">
                 <div class="flex items-start justify-between">
                     <div>
@@ -56,14 +41,14 @@
                         <div class="mt-1 text-2xl font-bold" style="color: {{ $c['color'] }}">{{ $c['value'] }}</div>
                         <div class="text-xs text-gray-500 mt-0.5">{{ $c['sub'] }}</div>
                     </div>
-                    <div class="text-2xl opacity-80 no-print">{{ $c['icon'] }}</div>
+                    <div class="text-2xl opacity-80">{{ $c['icon'] }}</div>
                 </div>
             </div>
         @endforeach
     </div>
 
     {{-- Распределение целей по статусам --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-6 print-card">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-6">
         <h2 class="text-lg font-semibold mb-4">Распределение целей</h2>
         @if ($stats['goals_total'] === 0)
             <p class="text-sm text-gray-500">В системе пока нет целей.</p>
@@ -97,43 +82,53 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {{-- Регистрации за 30 дней --}}
-        <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 p-5 print-card">
+        <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 p-5">
             <h2 class="text-lg font-semibold mb-4">Регистрации за 30 дней</h2>
             @if (collect($stats['registrations_30d'])->sum('count') === 0)
                 <p class="text-sm text-gray-500 py-8 text-center">
                     Новых регистраций за последние 30 дней нет.
                 </p>
             @else
-                <div class="relative h-64 print-chart">
+                <div class="relative h-64">
                     <canvas id="registrationsChart"></canvas>
                 </div>
 
-                {{-- Резервная таблица для печати — браузерный print не всегда хорошо рендерит canvas --}}
-                <table class="hidden print:table w-full mt-4 text-xs border-collapse">
-                    <thead>
-                        <tr class="bg-gray-100">
-                            <th class="border border-gray-300 px-2 py-1 text-left">Дата</th>
-                            <th class="border border-gray-300 px-2 py-1 text-right">Регистраций</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($stats['registrations_30d'] as $r)
-                            @if ($r['count'] > 0)
-                                <tr>
-                                    <td class="border border-gray-300 px-2 py-1">
-                                        {{ \Illuminate\Support\Carbon::parse($r['date'])->format('d.m.Y') }}
-                                    </td>
-                                    <td class="border border-gray-300 px-2 py-1 text-right">{{ $r['count'] }}</td>
+                @php
+                    $regDays = collect($stats['registrations_30d'])
+                        ->where('count', '>', 0)
+                        ->sortByDesc('date')
+                        ->values();
+                @endphp
+                @if ($regDays->isNotEmpty())
+                    <div class="mt-4 pt-4 border-t border-gray-100">
+                        <h3 class="text-sm font-semibold text-gray-700 mb-2">Расшифровка по дням</h3>
+                        <table class="w-full text-sm border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50">
+                                    <th class="border border-gray-200 px-3 py-1.5 text-left font-semibold text-gray-700">Дата</th>
+                                    <th class="border border-gray-200 px-3 py-1.5 text-right font-semibold text-gray-700">Зарегистрировано</th>
                                 </tr>
-                            @endif
-                        @endforeach
-                    </tbody>
-                </table>
+                            </thead>
+                            <tbody>
+                                @foreach ($regDays as $row)
+                                    <tr>
+                                        <td class="border border-gray-200 px-3 py-1.5 text-gray-700">
+                                            {{ \Illuminate\Support\Carbon::parse($row['date'])->format('d.m.Y') }}
+                                        </td>
+                                        <td class="border border-gray-200 px-3 py-1.5 text-right font-medium text-gray-900">
+                                            {{ $row['count'] }}
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
             @endif
         </div>
 
         {{-- Топ категорий --}}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 print-card">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
             <h2 class="text-lg font-semibold mb-4">Популярные категории</h2>
 
             @if (empty($stats['top_categories']) || collect($stats['top_categories'])->sum('goals_count') === 0)
@@ -149,7 +144,7 @@
                                       style="background-color: {{ $cat['color'] }}"></span>
                                 <span class="text-sm text-gray-800 truncate">{{ $cat['label'] }}</span>
                                 @if ($cat['is_system'])
-                                    <span class="text-xs text-gray-400 no-print">сист.</span>
+                                    <span class="text-xs text-gray-400">сист.</span>
                                 @endif
                             </div>
                             <span class="text-sm font-semibold text-gray-700 ml-2">{{ $cat['goals_count'] }}</span>
@@ -159,33 +154,7 @@
             @endif
         </div>
     </div>
-
-    {{-- Подвал отчёта (виден только при печати) --}}
-    <div class="hidden print:block mt-8 pt-4 border-t border-gray-300 text-xs text-gray-500">
-        Отчёт сгенерирован системой «{{ config('app.name') }}». Содержит только агрегированные данные.
-    </div>
 @endsection
-
-@push('head')
-<style>
-    @media print {
-        body { background: white !important; }
-        .no-print { display: none !important; }
-        .print-card {
-            box-shadow: none !important;
-            border: 1px solid #d1d5db !important;
-            page-break-inside: avoid;
-        }
-        .print-grid-4 {
-            display: grid !important;
-            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-            gap: 0.75rem !important;
-        }
-        .print-chart { height: 200px !important; }
-        @page { margin: 1.5cm; size: A4; }
-    }
-</style>
-@endpush
 
 @if (collect($stats['registrations_30d'])->sum('count') > 0)
 @push('scripts')

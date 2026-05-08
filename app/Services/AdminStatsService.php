@@ -55,7 +55,6 @@ class AdminStatsService
             'tasks_completion_rate' => $tasksTotal === 0 ? 0 : (int) round($tasksDone / $tasksTotal * 100),
             'registrations_30d' => $this->registrations(30),
             'top_categories' => $this->topCategories(5),
-            'generated_at' => Carbon::now(),
         ];
     }
 
