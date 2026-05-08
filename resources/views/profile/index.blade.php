@@ -1,0 +1,197 @@
+@extends('layouts.app')
+
+@section('title', 'Профиль — ' . config('app.name'))
+
+@section('content')
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold">Профиль</h1>
+
+        <a href="{{ route('dashboard') }}"
+           class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm">
+            ← Дашборд
+        </a>
+    </div>
+
+    @if (session('success'))
+        <div x-data="{ show: true }"
+             x-show="show"
+             x-init="setTimeout(() => show = false, 4000)"
+             class="mb-4 rounded-lg bg-green-50 border border-green-200 text-green-700 px-4 py-3 text-sm">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    {{-- Профиль: аватар, имя, email, bio --}}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+        <h2 class="text-lg font-semibold mb-4">Основные данные</h2>
+
+        <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data" class="space-y-4">
+            @csrf
+            @method('PATCH')
+
+            @if ($errors->hasAny(['name', 'email', 'bio', 'avatar']))
+                <div class="rounded-lg bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm">
+                    <ul class="list-disc list-inside space-y-0.5">
+                        @foreach (['name', 'email', 'bio', 'avatar'] as $field)
+                            @foreach ($errors->get($field) as $msg)
+                                <li>{{ $msg }}</li>
+                            @endforeach
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            <div class="flex items-center gap-4" x-data="{
+                preview: '{{ $user->avatarUrl() }}',
+                onPick(e) {
+                    const f = e.target.files?.[0];
+                    if (!f) return;
+                    this.preview = URL.createObjectURL(f);
+                }
+            }">
+                <div class="w-20 h-20 rounded-full overflow-hidden bg-indigo-100 flex items-center justify-center flex-shrink-0">
+                    <template x-if="preview">
+                        <img :src="preview" alt="Аватар" class="w-full h-full object-cover">
+                    </template>
+                    <template x-if="!preview">
+                        <span class="text-2xl font-semibold text-indigo-700">{{ $user->initial() }}</span>
+                    </template>
+                </div>
+
+                <div class="flex-1">
+                    <label for="avatar" class="block text-sm font-medium text-gray-700 mb-1">Аватар</label>
+                    <input id="avatar" name="avatar" type="file" accept="image/jpeg,image/png,image/webp"
+                           @change="onPick"
+                           class="block w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 file:cursor-pointer">
+                    <p class="text-xs text-gray-500 mt-1">JPEG / PNG / WebP, до 2 МБ.</p>
+                </div>
+            </div>
+
+            <div>
+                <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Имя</label>
+                <input id="name" name="name" type="text" required maxlength="120"
+                       value="{{ old('name', $user->name) }}"
+                       class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2 border">
+            </div>
+
+            <div>
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input id="email" name="email" type="email" required maxlength="160"
+                       value="{{ old('email', $user->email) }}"
+                       class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2 border">
+            </div>
+
+            <div>
+                <label for="bio" class="block text-sm font-medium text-gray-700 mb-1">О себе (необязательно)</label>
+                <textarea id="bio" name="bio" rows="3" maxlength="500"
+                          class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2 border">{{ old('bio', $user->bio) }}</textarea>
+                <p class="text-xs text-gray-500 mt-1">До 500 символов.</p>
+            </div>
+
+            <div>
+                <button type="submit"
+                        class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm">
+                    Сохранить
+                </button>
+            </div>
+        </form>
+    </div>
+
+    {{-- Смена пароля --}}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+        <h2 class="text-lg font-semibold mb-4">Смена пароля</h2>
+
+        <form method="POST" action="{{ route('profile.password') }}" class="space-y-4 max-w-md">
+            @csrf
+            @method('PATCH')
+
+            @if ($errors->hasAny(['current_password', 'password']))
+                <div class="rounded-lg bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm">
+                    <ul class="list-disc list-inside space-y-0.5">
+                        @foreach (['current_password', 'password'] as $field)
+                            @foreach ($errors->get($field) as $msg)
+                                <li>{{ $msg }}</li>
+                            @endforeach
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            <div>
+                <label for="current_password" class="block text-sm font-medium text-gray-700 mb-1">Текущий пароль</label>
+                <input id="current_password" name="current_password" type="password" required autocomplete="current-password"
+                       class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2 border">
+            </div>
+
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Новый пароль</label>
+                <input id="password" name="password" type="password" required minlength="8" autocomplete="new-password"
+                       class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2 border">
+                <p class="text-xs text-gray-500 mt-1">Минимум 8 символов.</p>
+            </div>
+
+            <div>
+                <label for="password_confirmation" class="block text-sm font-medium text-gray-700 mb-1">Повторите новый пароль</label>
+                <input id="password_confirmation" name="password_confirmation" type="password" required autocomplete="new-password"
+                       class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2 border">
+            </div>
+
+            <div>
+                <button type="submit"
+                        class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm">
+                    Сменить пароль
+                </button>
+            </div>
+        </form>
+    </div>
+
+    {{-- Опасная зона --}}
+    <div class="bg-white rounded-xl shadow-sm border border-red-200 p-6">
+        <h2 class="text-lg font-semibold text-red-700 mb-2">Опасная зона</h2>
+        <p class="text-sm text-gray-600 mb-4">
+            Удаление аккаунта необратимо. Все ваши категории, цели, подцели и задачи будут удалены вместе с аккаунтом.
+        </p>
+
+        <div x-data="{ show: false }">
+            <button type="button"
+                    x-show="!show"
+                    @click="show = true"
+                    class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm">
+                Удалить аккаунт
+            </button>
+
+            <form x-show="show"
+                  x-cloak
+                  method="POST" action="{{ route('profile.destroy') }}"
+                  onsubmit="return confirm('Точно удалить аккаунт? Действие необратимо.');"
+                  class="space-y-3 max-w-md">
+                @csrf
+                @method('DELETE')
+
+                @if ($errors->has('confirm_password'))
+                    <div class="rounded-lg bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm">
+                        {{ $errors->first('confirm_password') }}
+                    </div>
+                @endif
+
+                <div>
+                    <label for="confirm_password" class="block text-sm font-medium text-gray-700 mb-1">Подтвердите паролем</label>
+                    <input id="confirm_password" name="confirm_password" type="password" required autocomplete="current-password"
+                           class="w-full rounded-lg border-gray-300 focus:border-red-500 focus:ring-red-500 px-3 py-2 border">
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button type="submit"
+                            class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm">
+                        Удалить навсегда
+                    </button>
+                    <button type="button"
+                            @click="show = false"
+                            class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm">
+                        Отмена
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+@endsection
