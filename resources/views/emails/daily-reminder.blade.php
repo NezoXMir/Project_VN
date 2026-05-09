@@ -14,44 +14,58 @@
             Каждый день — маленький шаг к вашим целям. Вот что важно держать в фокусе сегодня.
         </p>
 
-        @if (! empty($summary['overdue']))
-            <div style="margin-top: 28px; padding: 20px; background: #fef2f2; border-left: 4px solid #ef4444; border-radius: 6px;">
-                <h3 style="margin: 0 0 6px 0; color: #991b1b; font-size: 16px;">
-                    Дедлайны, которые уже прошли
-                </h3>
-                <p style="margin: 0 0 12px 0; color: #6b7280; font-size: 13px;">
-                    Бывает — время уходит быстрее, чем планируется. Ничего страшного:
-                    перенесите дату или завершите оставшиеся задачи. Главное — вернуться в работу.
-                </p>
-                <ul style="margin: 0; padding-left: 20px; color: #1f2937;">
-                    @foreach ($summary['overdue'] as $g)
-                        <li style="margin-bottom: 4px;">
-                            <strong>«{{ $g['title'] }}»</strong>
-                            <span style="color: #6b7280; font-size: 13px;">— был {{ $g['deadline'] }}</span>
-                        </li>
-                    @endforeach
-                </ul>
-            </div>
+        @php
+            // Tier → набор inline-стилей. Email-клиенты не любят CSS-классы,
+            // поэтому стили проставляются прямо на элементах.
+            $toneFor = fn (string $tier) => match ($tier) {
+                'red'   => ['bg' => '#fef2f2', 'border' => '#ef4444', 'pillBg' => '#fee2e2', 'pillFg' => '#991b1b'],
+                'amber' => ['bg' => '#fffbeb', 'border' => '#f59e0b', 'pillBg' => '#fef3c7', 'pillFg' => '#92400e'],
+                'gray'  => ['bg' => '#f9fafb', 'border' => '#94a3b8', 'pillBg' => '#e5e7eb', 'pillFg' => '#374151'],
+            };
+        @endphp
+
+        @if (! empty($summary['with_deadline']))
+            <h3 style="margin: 28px 0 12px 0; color: #111827; font-size: 16px;">
+                Цели с дедлайнами
+            </h3>
+            <p style="margin: 0 0 12px 0; color: #6b7280; font-size: 13px;">
+                Цвет показывает срочность: красный — горит, оранжевый — на этой неделе, серый — есть запас.
+            </p>
+
+            @foreach ($summary['with_deadline'] as $g)
+                @php $tone = $toneFor($g['tier']); @endphp
+                <div style="margin-bottom: 8px; padding: 12px 16px; background: {{ $tone['bg'] }}; border-left: 4px solid {{ $tone['border'] }}; border-radius: 6px;">
+                    <div style="font-weight: 600; color: #1f2937;">«{{ $g['title'] }}»</div>
+                    <div style="margin-top: 4px; font-size: 13px; color: #6b7280;">
+                        Дедлайн: {{ $g['deadline'] }}
+                        <span style="display: inline-block; margin-left: 8px; padding: 2px 8px; border-radius: 999px; background: {{ $tone['pillBg'] }}; color: {{ $tone['pillFg'] }}; font-weight: 600; font-size: 12px;">
+                            {{ $g['status_text'] }}
+                        </span>
+                        @if ($g['category'])
+                            <span style="color: #9ca3af;"> · {{ $g['category'] }}</span>
+                        @endif
+                    </div>
+                </div>
+            @endforeach
         @endif
 
-        @if (! empty($summary['upcoming']))
-            <div style="margin-top: 20px; padding: 20px; background: #fffbeb; border-left: 4px solid #f59e0b; border-radius: 6px;">
-                <h3 style="margin: 0 0 6px 0; color: #92400e; font-size: 16px;">
-                    Что на горизонте ближайших полутора недель
-                </h3>
-                <p style="margin: 0 0 12px 0; color: #6b7280; font-size: 13px;">
-                    План есть — двигайтесь по нему. Каждая закрытая задача приближает к финишу.
-                </p>
-                <ul style="margin: 0; padding-left: 20px; color: #1f2937;">
-                    @foreach ($summary['upcoming'] as $g)
-                        @php
-                            $left = $g['days_left'] === 0
-                                ? 'сегодня'
-                                : ($g['days_left'] === 1 ? 'завтра' : "через {$g['days_left']} дн.");
-                        @endphp
+        @if (! empty($summary['no_deadline']))
+            <h3 style="margin: 28px 0 12px 0; color: #111827; font-size: 16px;">
+                Цели без дедлайна
+            </h3>
+            <p style="margin: 0 0 12px 0; color: #6b7280; font-size: 13px;">
+                Вот цели, для которых вы пока не зафиксировали срок.
+                Поставить дату — это самый простой способ сделать цель из «когда-нибудь» в «к такому-то».
+            </p>
+
+            <div style="padding: 12px 16px; background: #f9fafb; border-left: 4px solid #94a3b8; border-radius: 6px;">
+                <ul style="margin: 0; padding-left: 18px; color: #1f2937;">
+                    @foreach ($summary['no_deadline'] as $g)
                         <li style="margin-bottom: 4px;">
                             <strong>«{{ $g['title'] }}»</strong>
-                            <span style="color: #6b7280; font-size: 13px;">— {{ $g['deadline'] }} ({{ $left }})</span>
+                            @if ($g['category'])
+                                <span style="color: #9ca3af; font-size: 13px;"> · {{ $g['category'] }}</span>
+                            @endif
                         </li>
                     @endforeach
                 </ul>

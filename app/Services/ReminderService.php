@@ -9,47 +9,88 @@ class ReminderService
 {
     /**
      * Собирает контекст для ежедневного напоминания.
-     * Возвращает массив { overdue: [...], upcoming: [...] }
-     * или null, если для пользователя нет активных целей с дедлайнами,
-     * требующими внимания (тогда напоминание не шлётся вовсе).
+     * Возвращает массив:
+     *   {
+     *     with_deadline: [...],  // активные цели с дедлайном (просроченные + ближайшие $upcomingDaysAhead дней)
+     *     no_deadline:  [...]    // активные цели без дедлайна
+     *   }
+     * или null, если у пользователя вообще нет активных целей,
+     * требующих внимания (тогда напоминание не шлётся вовсе).
+     *
+     * Каждый элемент with_deadline имеет tier (red/amber/gray) и
+     * status_text — то же зонирование, что и на дашборде в секции
+     * «Ближайшие дедлайны».
      */
     public function buildSummary(int $userId, int $upcomingDaysAhead = 10): ?array
     {
         $today = Carbon::today();
         $until = $today->copy()->addDays($upcomingDaysAhead);
 
-        $goals = Goal::query()
+        $allActive = Goal::query()
             ->where('user_id', $userId)
             ->where('status', 'active')
-            ->whereNotNull('deadline')
             ->with('category')
             ->get();
 
-        $overdue = $goals
-            ->filter(fn (Goal $g) => $g->deadline->lt($today))
+        $withDeadline = $allActive
+            ->filter(fn (Goal $g) => $g->deadline !== null && $g->deadline->lte($until))
             ->sortBy('deadline')
             ->values();
 
-        $upcoming = $goals
-            ->filter(fn (Goal $g) => $g->deadline->gte($today) && $g->deadline->lte($until))
-            ->sortBy('deadline')
+        $noDeadline = $allActive
+            ->filter(fn (Goal $g) => $g->deadline === null)
+            ->sortBy('created_at')
             ->values();
 
-        if ($overdue->isEmpty() && $upcoming->isEmpty()) {
+        if ($withDeadline->isEmpty() && $noDeadline->isEmpty()) {
             return null;
         }
 
-        $mapGoal = fn (Goal $g) => [
+        return [
+            'with_deadline' => $withDeadline->map(fn (Goal $g) => $this->serializeWithDeadline($g))->all(),
+            'no_deadline' => $noDeadline->map(fn (Goal $g) => $this->serializeNoDeadline($g))->all(),
+        ];
+    }
+
+    private function serializeWithDeadline(Goal $g): array
+    {
+        $days = (int) ceil(Carbon::now()->diffInDays($g->deadline, false));
+
+        if ($days < 0) {
+            $tier = 'red';
+            $statusText = 'просрочено';
+        } elseif ($days < 3) {
+            $tier = 'red';
+            $statusText = match ($days) {
+                0 => 'сегодня',
+                1 => 'завтра',
+                default => "через {$days} дн.",
+            };
+        } elseif ($days < 7) {
+            $tier = 'amber';
+            $statusText = "через {$days} дн.";
+        } else {
+            $tier = 'gray';
+            $statusText = "через {$days} дн.";
+        }
+
+        return [
             'id' => $g->id,
             'title' => $g->title,
             'category' => $g->category?->label,
             'deadline' => $g->deadline->format('d.m.Y'),
-            'days_left' => (int) ceil(Carbon::now()->diffInDays($g->deadline, false)),
+            'days_left' => $days,
+            'tier' => $tier,
+            'status_text' => $statusText,
         ];
+    }
 
+    private function serializeNoDeadline(Goal $g): array
+    {
         return [
-            'overdue' => $overdue->map($mapGoal)->all(),
-            'upcoming' => $upcoming->map($mapGoal)->all(),
+            'id' => $g->id,
+            'title' => $g->title,
+            'category' => $g->category?->label,
         ];
     }
 }

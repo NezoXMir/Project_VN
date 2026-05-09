@@ -47,15 +47,26 @@ class DailyReminder extends Notification
 
     /**
      * Что сохраняется в notifications.data — JSON для bell-иконки.
+     * Считаем дополнительно overdue_count (tier='red' для просроченных)
+     * — bell-dropdown отрисовывает короткое резюме и подсветку.
      */
     public function toArray(object $notifiable): array
     {
+        $withDeadline = $this->summary['with_deadline'] ?? [];
+        $noDeadline = $this->summary['no_deadline'] ?? [];
+
+        $overdueCount = count(array_filter(
+            $withDeadline,
+            fn ($g) => ($g['days_left'] ?? 0) < 0
+        ));
+
         return [
             'type' => 'daily_reminder',
-            'overdue_count' => count($this->summary['overdue'] ?? []),
-            'upcoming_count' => count($this->summary['upcoming'] ?? []),
-            'overdue' => $this->summary['overdue'] ?? [],
-            'upcoming' => $this->summary['upcoming'] ?? [],
+            'with_deadline_count' => count($withDeadline),
+            'no_deadline_count' => count($noDeadline),
+            'overdue_count' => $overdueCount,
+            'with_deadline' => $withDeadline,
+            'no_deadline' => $noDeadline,
         ];
     }
 }

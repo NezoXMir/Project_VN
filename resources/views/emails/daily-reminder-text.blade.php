@@ -2,25 +2,28 @@
 
 Каждый день — маленький шаг к вашим целям. Вот что важно держать в фокусе сегодня.
 
-@if (! empty($summary['overdue']))
-ДЕДЛАЙНЫ, КОТОРЫЕ УЖЕ ПРОШЛИ
-Бывает — время уходит быстрее, чем планируется. Ничего страшного:
-перенесите дату или завершите оставшиеся задачи. Главное — вернуться в работу.
+@if (! empty($summary['with_deadline']))
+ЦЕЛИ С ДЕДЛАЙНАМИ
+(! — горит, ~ — на этой неделе, • — есть запас)
 
-@foreach ($summary['overdue'] as $g)
-- «{{ $g['title'] }}» — был {{ $g['deadline'] }}
+@foreach ($summary['with_deadline'] as $g)
+@php
+$marker = match ($g['tier']) {
+    'red' => '!',
+    'amber' => '~',
+    default => '·',
+};
+@endphp
+{{ $marker }} «{{ $g['title'] }}» — {{ $g['deadline'] }} ({{ $g['status_text'] }}@if ($g['category']), {{ $g['category'] }}@endif)
 @endforeach
 
 @endif
-@if (! empty($summary['upcoming']))
-ЧТО НА ГОРИЗОНТЕ БЛИЖАЙШИХ ПОЛУТОРА НЕДЕЛЬ
-План есть — двигайтесь по нему. Каждая закрытая задача приближает к финишу.
+@if (! empty($summary['no_deadline']))
+ЦЕЛИ БЕЗ ДЕДЛАЙНА
+(подумайте, какую дату хотели бы для них установить — это сильно помогает)
 
-@foreach ($summary['upcoming'] as $g)
-@php
-$left = $g['days_left'] === 0 ? 'сегодня' : ($g['days_left'] === 1 ? 'завтра' : "через {$g['days_left']} дн.");
-@endphp
-- «{{ $g['title'] }}» — {{ $g['deadline'] }} ({{ $left }})
+@foreach ($summary['no_deadline'] as $g)
+- «{{ $g['title'] }}»@if ($g['category']) ({{ $g['category'] }})@endif
 @endforeach
 
 @endif

@@ -70,20 +70,7 @@ $cards = [
                             <li class="px-4 py-3 hover:bg-gray-50">
                                 <div class="flex items-start justify-between gap-2">
                                     <div class="flex-1 min-w-0">
-                                        <p class="text-sm text-gray-800">
-                                            <template x-if="n.data.overdue_count > 0 && n.data.upcoming_count > 0">
-                                                <span>
-                                                    <span x-text="n.data.overdue_count"></span> просроченных,
-                                                    <span x-text="n.data.upcoming_count"></span> приближается
-                                                </span>
-                                            </template>
-                                            <template x-if="n.data.overdue_count > 0 && n.data.upcoming_count === 0">
-                                                <span><span x-text="n.data.overdue_count"></span> целей просрочено</span>
-                                            </template>
-                                            <template x-if="n.data.overdue_count === 0 && n.data.upcoming_count > 0">
-                                                <span><span x-text="n.data.upcoming_count"></span> дедлайн(ов) на этой неделе</span>
-                                            </template>
-                                        </p>
+                                        <p class="text-sm text-gray-800" x-text="summarize(n.data)"></p>
                                         <p class="text-xs text-gray-400 mt-0.5" x-text="formatDate(n.created_at)"></p>
                                     </div>
                                     <button @click="markRead(n.id)" type="button"
@@ -318,6 +305,17 @@ function notificationsBell(initialCount, initialItems) {
         formatDate(iso) {
             const d = new Date(iso);
             return d.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+        },
+
+        summarize(data) {
+            const overdue = data.overdue_count || 0;
+            const withDeadline = data.with_deadline_count || 0;
+            const noDeadline = data.no_deadline_count || 0;
+            const parts = [];
+            if (overdue > 0) parts.push(`${overdue} просрочено`);
+            if (withDeadline - overdue > 0) parts.push(`${withDeadline - overdue} с дедлайном`);
+            if (noDeadline > 0) parts.push(`${noDeadline} без дедлайна`);
+            return parts.length ? parts.join(', ') : 'Сводка по целям';
         },
 
         async req(url) {
