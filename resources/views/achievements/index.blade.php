@@ -18,24 +18,20 @@
     </div>
 
     {{-- Прогресс по бейджам --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-6">
+    <x-card class="mb-6">
         <div class="flex items-center justify-between mb-2">
             <div class="text-sm font-medium text-gray-700">Общий прогресс</div>
             <div class="text-sm font-semibold text-indigo-600">
                 {{ $totalCount > 0 ? (int) round($unlockedCount / $totalCount * 100) : 0 }}%
             </div>
         </div>
-        <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-            <div class="h-full bg-indigo-600 transition-all duration-500"
-                 style="width: {{ $totalCount > 0 ? ($unlockedCount / $totalCount * 100) : 0 }}%"></div>
-        </div>
-    </div>
+        <x-progress-bar :value="$totalCount > 0 ? (int) round($unlockedCount / $totalCount * 100) : 0" />
+    </x-card>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         @foreach ($achievements as $a)
             @php $isUnlocked = $a->unlocked_at !== null; @endphp
-            <div class="bg-white rounded-xl shadow-sm border p-5 transition
-                        {{ $isUnlocked ? 'border-indigo-200' : 'border-gray-100' }}">
+            <x-card :class="$isUnlocked ? '!border-indigo-200' : ''">
                 <div class="text-4xl mb-2 {{ $isUnlocked ? '' : 'opacity-30' }}">
                     {{ $isUnlocked ? $a->icon : '🔒' }}
                 </div>
@@ -44,9 +40,9 @@
 
                 @if ($isUnlocked)
                     <div class="mt-3 text-xs">
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+                        <x-badge tone="emerald">
                             ✓ Получено {{ \Illuminate\Support\Carbon::parse($a->unlocked_at)->format('d.m.Y') }}
-                        </span>
+                        </x-badge>
                     </div>
                 @elseif ($a->progress)
                     <div class="mt-3">
@@ -54,13 +50,10 @@
                             <span>Прогресс</span>
                             <span class="font-medium">{{ $a->progress['current'] }} / {{ $a->progress['threshold'] }}</span>
                         </div>
-                        <div class="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
-                            <div class="h-full bg-indigo-400 transition-all duration-500"
-                                 style="width: {{ $a->progress['percent'] }}%"></div>
-                        </div>
+                        <x-progress-bar :value="$a->progress['percent']" color="#818CF8" size="sm" />
                     </div>
                 @endif
-            </div>
+            </x-card>
         @endforeach
     </div>
 @endsection

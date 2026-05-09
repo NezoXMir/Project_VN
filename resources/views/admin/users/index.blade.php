@@ -24,25 +24,10 @@
         </div>
     </div>
 
-    @if (session('success'))
-        <div x-data="{ show: true }"
-             x-show="show"
-             x-init="setTimeout(() => show = false, 4000)"
-             class="mb-4 rounded-lg bg-green-50 border border-green-200 text-green-700 px-4 py-3 text-sm">
-            {{ session('success') }}
-        </div>
-    @endif
+    <x-flash-message type="success" />
+    <x-flash-message type="error" />
 
-    @if (session('error'))
-        <div x-data="{ show: true }"
-             x-show="show"
-             x-init="setTimeout(() => show = false, 6000)"
-             class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm">
-            {{ session('error') }}
-        </div>
-    @endif
-
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <x-card padding="p-0" class="overflow-hidden">
         <table class="min-w-full divide-y divide-gray-100 text-sm">
             <thead class="bg-gray-50 text-gray-600 uppercase text-xs">
                 <tr>
@@ -66,9 +51,9 @@
                         <td class="px-4 py-3 text-gray-600">{{ $u->email }}</td>
                         <td class="px-4 py-3">
                             @if ($u->isAdmin())
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">admin</span>
+                                <x-badge tone="indigo">admin</x-badge>
                             @else
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">user</span>
+                                <x-badge tone="gray">user</x-badge>
                             @endif
                         </td>
                         <td class="px-4 py-3 text-gray-500">
@@ -106,5 +91,5 @@
                 @endforeach
             </tbody>
         </table>
-    </div>
+    </x-card>
 @endsection

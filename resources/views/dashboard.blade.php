@@ -109,20 +109,12 @@ $cards = [
     </div>
 </div>
 
-@if (session('success'))
-<div x-data="{ show: true }"
-    x-show="show"
-    x-init="setTimeout(() => show = false, 4000)"
-    class="mb-4 rounded-lg bg-green-50 border border-green-200 text-green-700 px-4 py-3 text-sm">
-    {{ session('success') }}
-</div>
-@endif
+<x-flash-message type="success" />
 
 {{-- KPI-карточки --}}
 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
     @foreach ($cards as $c)
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 border-l-4"
-        style="border-left-color: {{ $c['color'] }}">
+    <x-card :accent="$c['color']">
         <div class="flex items-start justify-between">
             <div>
                 <div class="text-xs text-gray-500 uppercase tracking-wide">{{ $c['label'] }}</div>
@@ -135,28 +127,25 @@ $cards = [
             </div>
             <div class="text-2xl opacity-80">{{ $c['icon'] }}</div>
         </div>
-    </div>
+    </x-card>
     @endforeach
 </div>
 
 {{-- Общий прогресс --}}
 @if ($stats['total_tasks'] > 0)
-<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-6">
+<x-card class="mb-6">
     <div class="flex items-center justify-between mb-2">
         <div class="text-sm font-medium text-gray-700">Общий прогресс по всем задачам</div>
         <div class="text-sm font-semibold text-indigo-600">{{ $stats['overall_progress'] }}%</div>
     </div>
-    <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-        <div class="h-full bg-indigo-600 transition-all duration-500"
-            style="width: {{ $stats['overall_progress'] }}%"></div>
-    </div>
-</div>
+    <x-progress-bar :value="$stats['overall_progress']" />
+</x-card>
 @endif
 
 {{-- Рекомендации --}}
 @if (! empty($recommendations))
-<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-6">
-    <h2 class="text-lg font-semibold mb-4">Рекомендации</h2>
+<x-card class="mb-6">
+    <x-section-header title="Рекомендации" />
     <ul class="space-y-3">
         @foreach ($recommendations as $rec)
         @php
@@ -188,13 +177,13 @@ $cards = [
         </li>
         @endforeach
     </ul>
-</div>
+</x-card>
 @endif
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     {{-- График активности --}}
-    <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-        <h2 class="text-lg font-semibold mb-4">Активность за 30 дней</h2>
+    <x-card class="lg:col-span-2">
+        <x-section-header title="Активность за 30 дней" />
         @if (collect($stats['activity_30d'])->sum('count') === 0)
         <p class="text-sm text-gray-500 py-8 text-center">
             Пока нет завершённых задач. Откройте цель, разбейте её на подцели
@@ -205,11 +194,11 @@ $cards = [
             <canvas id="activityChart"></canvas>
         </div>
         @endif
-    </div>
+    </x-card>
 
     {{-- Ближайшие дедлайны --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-        <h2 class="text-lg font-semibold mb-4">Ближайшие дедлайны</h2>
+    <x-card>
+        <x-section-header title="Ближайшие дедлайны" />
 
         @if ($stats['upcoming_deadlines']->isEmpty())
         <p class="text-sm text-gray-500 py-4">
@@ -259,18 +248,19 @@ $cards = [
                         @endforeach
         </ul>
         @endif
-    </div>
+    </x-card>
 </div>
 
 {{-- Последние достижения --}}
-<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mt-6">
-    <div class="flex items-center justify-between mb-4">
-        <h2 class="text-lg font-semibold">Последние достижения</h2>
-        <a href="{{ route('achievements.index') }}"
-            class="text-sm text-indigo-600 hover:text-indigo-700">
-            Все →
-        </a>
-    </div>
+<x-card class="mt-6">
+    <x-section-header title="Последние достижения">
+        <x-slot:action>
+            <a href="{{ route('achievements.index') }}"
+                class="text-sm text-indigo-600 hover:text-indigo-700">
+                Все →
+            </a>
+        </x-slot:action>
+    </x-section-header>
 
     @if ($recentAchievements->isEmpty())
     <p class="text-sm text-gray-500 py-3">
@@ -291,7 +281,7 @@ $cards = [
         @endforeach
     </div>
     @endif
-</div>
+</x-card>
 @endsection
 
 @push('scripts')

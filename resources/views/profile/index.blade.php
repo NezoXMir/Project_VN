@@ -12,18 +12,11 @@
         </a>
     </div>
 
-    @if (session('success'))
-        <div x-data="{ show: true }"
-             x-show="show"
-             x-init="setTimeout(() => show = false, 4000)"
-             class="mb-4 rounded-lg bg-green-50 border border-green-200 text-green-700 px-4 py-3 text-sm">
-            {{ session('success') }}
-        </div>
-    @endif
+    <x-flash-message type="success" />
 
     {{-- Профиль: аватар, имя, email, bio --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-        <h2 class="text-lg font-semibold mb-4">Основные данные</h2>
+    <x-card padding="p-6" class="mb-6">
+        <x-section-header title="Основные данные" />
 
         <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data" class="space-y-4">
             @csrf
@@ -108,11 +101,11 @@
                 </button>
             </div>
         </form>
-    </div>
+    </x-card>
 
     {{-- Смена пароля --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-        <h2 class="text-lg font-semibold mb-4">Смена пароля</h2>
+    <x-card padding="p-6" class="mb-6">
+        <x-section-header title="Смена пароля" />
 
         <form method="POST" action="{{ route('profile.password') }}" class="space-y-4 max-w-md">
             @csrf
@@ -156,10 +149,10 @@
                 </button>
             </div>
         </form>
-    </div>
+    </x-card>
 
-    {{-- Опасная зона --}}
-    <div class="bg-white rounded-xl shadow-sm border border-red-200 p-6">
+    {{-- Опасная зона. Используем x-card с явно переопределённым border --}}
+    <x-card padding="p-6" class="!border-red-200">
         <h2 class="text-lg font-semibold text-red-700 mb-2">Опасная зона</h2>
         <p class="text-sm text-gray-600 mb-4">
             Удаление аккаунта необратимо. Все ваши категории, цели, подцели и задачи будут удалены вместе с аккаунтом.
@@ -206,5 +199,5 @@
                 </div>
             </form>
         </div>
-    </div>
+    </x-card>
 @endsection

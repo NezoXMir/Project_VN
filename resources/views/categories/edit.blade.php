@@ -11,7 +11,7 @@
         </a>
     </div>
 
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 max-w-xl">
+    <x-card padding="p-6" class="max-w-xl">
         @include('categories._form', [
             'action' => route('categories.update', $category->id),
             'method' => 'PATCH',
@@ -20,5 +20,5 @@
             'category' => $category,
             'submitLabel' => 'Сохранить',
         ])
-    </div>
+    </x-card>
 @endsection

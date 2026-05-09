@@ -33,8 +33,7 @@
     {{-- KPI-карточки --}}
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         @foreach ($cards as $c)
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 border-l-4"
-                 style="border-left-color: {{ $c['color'] }}">
+            <x-card :accent="$c['color']">
                 <div class="flex items-start justify-between">
                     <div>
                         <div class="text-xs text-gray-500 uppercase tracking-wide">{{ $c['label'] }}</div>
@@ -43,13 +42,13 @@
                     </div>
                     <div class="text-2xl opacity-80">{{ $c['icon'] }}</div>
                 </div>
-            </div>
+            </x-card>
         @endforeach
     </div>
 
     {{-- Распределение целей по статусам --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-6">
-        <h2 class="text-lg font-semibold mb-4">Распределение целей</h2>
+    <x-card class="mb-6">
+        <x-section-header title="Распределение целей" />
         @if ($stats['goals_total'] === 0)
             <p class="text-sm text-gray-500">В системе пока нет целей.</p>
         @else
@@ -78,12 +77,12 @@
                 @endforeach
             </div>
         @endif
-    </div>
+    </x-card>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {{-- Регистрации за 30 дней --}}
-        <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-            <h2 class="text-lg font-semibold mb-4">Регистрации за 30 дней</h2>
+        <x-card class="lg:col-span-2">
+            <x-section-header title="Регистрации за 30 дней" />
             @if (collect($stats['registrations_30d'])->sum('count') === 0)
                 <p class="text-sm text-gray-500 py-8 text-center">
                     Новых регистраций за последние 30 дней нет.
@@ -125,11 +124,11 @@
                     </div>
                 @endif
             @endif
-        </div>
+        </x-card>
 
         {{-- Топ категорий --}}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-            <h2 class="text-lg font-semibold mb-4">Популярные категории</h2>
+        <x-card>
+            <x-section-header title="Популярные категории" />
 
             @if (empty($stats['top_categories']) || collect($stats['top_categories'])->sum('goals_count') === 0)
                 <p class="text-sm text-gray-500 py-4">
@@ -152,7 +151,7 @@
                     @endforeach
                 </ul>
             @endif
-        </div>
+        </x-card>
     </div>
 @endsection
 

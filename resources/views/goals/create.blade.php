@@ -11,7 +11,7 @@
         </a>
     </div>
 
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 max-w-2xl">
+    <x-card padding="p-6" class="max-w-2xl">
         @if ($errors->any())
             <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm">
                 <ul class="list-disc list-inside space-y-0.5">
@@ -73,5 +73,5 @@
                 </a>
             </div>
         </form>
-    </div>
+    </x-card>
 @endsection
