@@ -28,7 +28,18 @@ class ProfileUpdateRequest extends FormRequest
             ],
             'bio' => ['nullable', 'string', 'max:500'],
             'avatar' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
+            'email_reminders_enabled' => ['nullable', 'boolean'],
         ];
+    }
+
+    /**
+     * Чекбокс отсутствует в payload когда не отмечен — нормализуем в false.
+     */
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'email_reminders_enabled' => $this->boolean('email_reminders_enabled'),
+        ]);
     }
 
     public function messages(): array

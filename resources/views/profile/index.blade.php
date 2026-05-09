@@ -89,6 +89,19 @@
             </div>
 
             <div>
+                <label class="flex items-center gap-2 text-sm font-medium text-gray-700">
+                    <input type="checkbox" name="email_reminders_enabled" value="1"
+                           {{ old('email_reminders_enabled', $user->email_reminders_enabled) ? 'checked' : '' }}
+                           class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                    Получать ежедневные email-напоминания о дедлайнах
+                </label>
+                <p class="text-xs text-gray-500 mt-1 ml-6">
+                    Письмо приходит утром, если есть просроченные или приближающиеся дедлайны.
+                    Уведомления в bell остаются всегда.
+                </p>
+            </div>
+
+            <div>
                 <button type="submit"
                         class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm">
                     Сохранить

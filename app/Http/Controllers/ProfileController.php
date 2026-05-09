@@ -28,7 +28,7 @@ class ProfileController extends Controller
     {
         $this->profile->updateProfile(
             Auth::user(),
-            $request->safe()->only(['name', 'email', 'bio']),
+            $request->safe()->only(['name', 'email', 'bio', 'email_reminders_enabled']),
             $request->file('avatar'),
         );
 

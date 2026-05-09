@@ -25,6 +25,7 @@ class User extends Authenticatable
         'role',
         'avatar_path',
         'bio',
+        'email_reminders_enabled',
     ];
 
     public const ROLE_USER = 'user';
@@ -89,6 +90,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'email_reminders_enabled' => 'boolean',
         ];
     }
 }

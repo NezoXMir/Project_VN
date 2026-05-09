@@ -24,6 +24,7 @@ class DashboardController extends Controller
             'stats' => $this->stats->dashboard($userId),
             'recommendations' => $this->recommendations->generate($userId),
             'recentAchievements' => $user->achievements()->take(3)->get(),
+            'unreadNotifications' => $user->unreadNotifications()->take(10)->get(),
         ]);
     }
 }

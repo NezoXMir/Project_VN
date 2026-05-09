@@ -31,6 +31,71 @@ $cards = [
             Достижения
         </a>
 
+        {{-- Bell-иконка с уведомлениями --}}
+        <div x-data="notificationsBell({{ $unreadNotifications->count() }}, {{ $unreadNotifications->toJson() }})"
+             @click.outside="open = false"
+             class="relative">
+            <button @click="open = !open" type="button"
+                    class="relative bg-gray-100 hover:bg-gray-200 text-gray-700 p-2 rounded-lg"
+                    title="Уведомления">
+                🔔
+                <span x-show="count > 0"
+                      x-text="count"
+                      class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1"></span>
+            </button>
+
+            <div x-show="open"
+                 x-transition.opacity
+                 x-cloak
+                 class="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-100 z-40">
+                <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                    <h3 class="font-semibold text-sm">Уведомления</h3>
+                    <button x-show="items.length > 0"
+                            @click="markAllRead()"
+                            type="button"
+                            class="text-xs text-indigo-600 hover:text-indigo-700">
+                        Прочитать все
+                    </button>
+                </div>
+
+                <template x-if="items.length === 0">
+                    <div class="px-4 py-6 text-sm text-gray-500 text-center">
+                        Новых уведомлений нет.
+                    </div>
+                </template>
+
+                <template x-if="items.length > 0">
+                    <ul class="max-h-80 overflow-y-auto divide-y divide-gray-50">
+                        <template x-for="n in items" :key="n.id">
+                            <li class="px-4 py-3 hover:bg-gray-50">
+                                <div class="flex items-start justify-between gap-2">
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm text-gray-800">
+                                            <template x-if="n.data.overdue_count > 0 && n.data.upcoming_count > 0">
+                                                <span>
+                                                    <span x-text="n.data.overdue_count"></span> просроченных,
+                                                    <span x-text="n.data.upcoming_count"></span> приближается
+                                                </span>
+                                            </template>
+                                            <template x-if="n.data.overdue_count > 0 && n.data.upcoming_count === 0">
+                                                <span><span x-text="n.data.overdue_count"></span> целей просрочено</span>
+                                            </template>
+                                            <template x-if="n.data.overdue_count === 0 && n.data.upcoming_count > 0">
+                                                <span><span x-text="n.data.upcoming_count"></span> дедлайн(ов) на этой неделе</span>
+                                            </template>
+                                        </p>
+                                        <p class="text-xs text-gray-400 mt-0.5" x-text="formatDate(n.created_at)"></p>
+                                    </div>
+                                    <button @click="markRead(n.id)" type="button"
+                                            class="text-xs text-gray-400 hover:text-gray-600">×</button>
+                                </div>
+                            </li>
+                        </template>
+                    </ul>
+                </template>
+            </div>
+        </div>
+
         @if (auth()->user()->isAdmin())
         <a href="{{ route('admin.dashboard') }}"
             class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm">
@@ -241,6 +306,54 @@ $cards = [
     @endif
 </div>
 @endsection
+
+@push('scripts')
+<script>
+function notificationsBell(initialCount, initialItems) {
+    return {
+        open: false,
+        count: initialCount,
+        items: initialItems,
+
+        formatDate(iso) {
+            const d = new Date(iso);
+            return d.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+        },
+
+        async req(url) {
+            const csrf = document.querySelector('meta[name="csrf-token"]').content;
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrf,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+            });
+            if (!res.ok) throw new Error('Не удалось обновить уведомление');
+            return res.json();
+        },
+
+        async markRead(id) {
+            try {
+                await this.req(`/notifications/${id}/read`);
+                this.items = this.items.filter(n => n.id !== id);
+                this.count = Math.max(0, this.count - 1);
+            } catch (e) { /* fail silently */ }
+        },
+
+        async markAllRead() {
+            try {
+                await this.req('/notifications/read-all');
+                this.items = [];
+                this.count = 0;
+            } catch (e) { /* fail silently */ }
+        },
+    };
+}
+</script>
+@endpush
 
 @if (collect($stats['activity_30d'])->sum('count') > 0)
 @push('scripts')

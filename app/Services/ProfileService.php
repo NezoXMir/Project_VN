@@ -21,6 +21,7 @@ class ProfileService
             'name' => $data['name'],
             'email' => $data['email'],
             'bio' => $data['bio'] ?? null,
+            'email_reminders_enabled' => (bool) ($data['email_reminders_enabled'] ?? false),
         ]);
 
         if ($avatar !== null) {
