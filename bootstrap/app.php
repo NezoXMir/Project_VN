@@ -15,6 +15,13 @@ return Application::configure(basePath: dirname(__DIR__))
             'auth' => \App\Http\Middleware\RequireAuth::class,
             'admin' => \App\Http\Middleware\RequireAdmin::class,
         ]);
+
+        // API-эндпоинты используют session-cookie auth, но не нуждаются
+        // в CSRF: HTML-форм у них нет, доступ только из same-origin
+        // или авторизованного клиента. Стандартный паттерн для Laravel API.
+        $middleware->validateCsrfTokens(except: [
+            'api/*',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
