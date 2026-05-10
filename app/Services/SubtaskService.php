@@ -4,64 +4,71 @@ namespace App\Services;
 
 use App\Models\Goal;
 use App\Models\Subtask;
+use App\Models\User;
+use App\Repositories\GoalRepository;
+use App\Repositories\SubtaskRepository;
+use Illuminate\Support\Facades\Gate;
 
 class SubtaskService
 {
-    public function create(int $goalId, int $userId, array $data): Subtask
+    public function __construct(
+        private readonly SubtaskRepository $repo,
+        private readonly GoalRepository $goalRepo,
+    ) {
+    }
+
+    public function create(int $goalId, User $user, array $data): Subtask
     {
-        $goal = $this->findOwnedGoal($goalId, $userId);
+        $goal = $this->findOwnedGoal($goalId, $user);
 
-        $position = (int) Subtask::query()
-            ->where('goal_id', $goal->id)
-            ->max('position') + 1;
-
-        return Subtask::create([
+        return $this->repo->create([
             'goal_id' => $goal->id,
             'title' => $data['title'],
-            'position' => $position,
+            'position' => $this->repo->nextPosition($goal->id),
         ]);
     }
 
-    public function update(int $subtaskId, int $userId, array $data): Subtask
+    public function update(int $subtaskId, User $user, array $data): Subtask
     {
-        $subtask = $this->findOwned($subtaskId, $userId);
-        $subtask->fill(['title' => $data['title']])->save();
+        $subtask = $this->findAuthorized($subtaskId, $user, 'update');
+        $subtask->fill(['title' => $data['title']]);
 
-        return $subtask;
+        return $this->repo->save($subtask);
     }
 
-    public function delete(int $subtaskId, int $userId): void
+    public function delete(int $subtaskId, User $user): void
     {
-        $subtask = $this->findOwned($subtaskId, $userId);
-        $subtask->delete();
+        $subtask = $this->findAuthorized($subtaskId, $user, 'delete');
+        $this->repo->delete($subtask);
     }
 
-    public function findOwned(int $subtaskId, int $userId): Subtask
+    public function findOwned(int $subtaskId, User $user): Subtask
     {
-        $subtask = Subtask::with('goal')->find($subtaskId);
+        return $this->findAuthorized($subtaskId, $user, 'view');
+    }
+
+    private function findAuthorized(int $subtaskId, User $user, string $ability): Subtask
+    {
+        $subtask = $this->repo->findWithGoal($subtaskId);
 
         if (! $subtask) {
             abort(404);
         }
 
-        if ($subtask->goal->user_id !== $userId) {
-            abort(403);
-        }
+        Gate::forUser($user)->authorize($ability, $subtask);
 
         return $subtask;
     }
 
-    private function findOwnedGoal(int $goalId, int $userId): Goal
+    private function findOwnedGoal(int $goalId, User $user): Goal
     {
-        $goal = Goal::find($goalId);
+        $goal = $this->goalRepo->findById($goalId);
 
         if (! $goal) {
             abort(404);
         }
 
-        if ($goal->user_id !== $userId) {
-            abort(403);
-        }
+        Gate::forUser($user)->authorize('update', $goal);
 
         return $goal;
     }

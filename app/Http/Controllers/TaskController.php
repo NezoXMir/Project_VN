@@ -18,7 +18,7 @@ class TaskController extends Controller
 
     public function store(TaskRequest $request, int $subtask): JsonResponse
     {
-        $task = $this->tasks->create($subtask, (int) Auth::id(), $request->validated());
+        $task = $this->tasks->create($subtask, Auth::user(), $request->validated());
 
         return response()->json([
             'id' => $task->id,
@@ -32,7 +32,7 @@ class TaskController extends Controller
 
     public function update(TaskRequest $request, int $task): JsonResponse
     {
-        $model = $this->tasks->update($task, (int) Auth::id(), $request->validated());
+        $model = $this->tasks->update($task, Auth::user(), $request->validated());
 
         return response()->json([
             'id' => $model->id,
@@ -42,8 +42,8 @@ class TaskController extends Controller
 
     public function toggle(int $task): JsonResponse
     {
-        $userId = (int) Auth::id();
-        $model = $this->tasks->toggle($task, $userId);
+        $user = Auth::user();
+        $model = $this->tasks->toggle($task, $user);
         $goal = $model->subtask->goal;
         $goal->load('subtasks.tasks');
 
@@ -51,7 +51,7 @@ class TaskController extends Controller
         // галочки не должно перепроверять (правила всё равно
         // не «откатываются»).
         $unlocked = $model->is_done
-            ? $this->achievements->check($userId)
+            ? $this->achievements->check($user->id)
             : [];
 
         return response()->json([
@@ -69,7 +69,7 @@ class TaskController extends Controller
 
     public function destroy(int $task): JsonResponse
     {
-        $this->tasks->delete($task, (int) Auth::id());
+        $this->tasks->delete($task, Auth::user());
 
         return response()->json(['ok' => true]);
     }

@@ -15,7 +15,7 @@ class SubtaskController extends Controller
 
     public function store(SubtaskRequest $request, int $goal): JsonResponse
     {
-        $subtask = $this->subtasks->create($goal, (int) Auth::id(), $request->validated());
+        $subtask = $this->subtasks->create($goal, Auth::user(), $request->validated());
 
         return response()->json([
             'id' => $subtask->id,
@@ -28,7 +28,7 @@ class SubtaskController extends Controller
 
     public function update(SubtaskRequest $request, int $subtask): JsonResponse
     {
-        $model = $this->subtasks->update($subtask, (int) Auth::id(), $request->validated());
+        $model = $this->subtasks->update($subtask, Auth::user(), $request->validated());
 
         return response()->json([
             'id' => $model->id,
@@ -38,7 +38,7 @@ class SubtaskController extends Controller
 
     public function destroy(int $subtask): JsonResponse
     {
-        $this->subtasks->delete($subtask, (int) Auth::id());
+        $this->subtasks->delete($subtask, Auth::user());
 
         return response()->json(['ok' => true]);
     }

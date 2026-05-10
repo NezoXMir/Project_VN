@@ -40,7 +40,7 @@
                     </div>
                 </div>
 
-                @if (! $cat->is_system)
+                @can('update', $cat)
                     <div class="flex items-center gap-2">
                         <a href="{{ route('categories.edit', $cat->id) }}"
                            class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-lg">
@@ -56,7 +56,7 @@
                             </button>
                         </form>
                     </div>
-                @endif
+                @endcan
             </x-card>
         @endforeach
     </div>

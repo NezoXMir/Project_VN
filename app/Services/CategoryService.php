@@ -3,51 +3,36 @@
 namespace App\Services;
 
 use App\Models\Category;
+use App\Models\User;
+use App\Repositories\CategoryRepository;
 use DomainException;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Gate;
 
 class CategoryService
 {
-    /**
-     * Все категории, доступные пользователю: системные первыми
-     * (по id), потом его собственные (свежие сверху).
-     */
+    public function __construct(private readonly CategoryRepository $repo)
+    {
+    }
+
     public function listAvailable(int $userId): Collection
     {
-        return Category::query()
-            ->availableTo($userId)
-            ->orderByDesc('is_system')
-            ->orderBy('id')
-            ->orderByDesc('created_at')
-            ->get();
+        return $this->repo->availableForUser($userId);
     }
 
     public function listOwn(int $userId): Collection
     {
-        return Category::query()
-            ->ownedBy($userId)
-            ->orderByDesc('created_at')
-            ->get();
+        return $this->repo->ownedByUser($userId);
     }
 
-    /**
-     * Уникальные hex-цвета, которые пользователь уже использовал в своих
-     * категориях. Для секции «Твои цвета» в форме создания/редактирования.
-     */
     public function userColorsFor(int $userId): array
     {
-        return Category::query()
-            ->ownedBy($userId)
-            ->orderByDesc('created_at')
-            ->pluck('color')
-            ->unique()
-            ->values()
-            ->all();
+        return $this->repo->userColors($userId);
     }
 
     public function create(int $userId, array $data): Category
     {
-        return Category::create([
+        return $this->repo->create([
             'user_id' => $userId,
             'label' => $data['label'],
             'color' => $this->normalizeColor($data['color']),
@@ -55,23 +40,23 @@ class CategoryService
         ]);
     }
 
-    public function update(int $categoryId, int $userId, array $data): Category
+    public function update(int $categoryId, User $user, array $data): Category
     {
-        $category = $this->findOwned($categoryId, $userId);
+        $category = $this->findAuthorized($categoryId, $user, 'update');
 
         $category->fill([
             'label' => $data['label'],
             'color' => $this->normalizeColor($data['color']),
-        ])->save();
+        ]);
 
-        return $category;
+        return $this->repo->save($category);
     }
 
-    public function delete(int $categoryId, int $userId): void
+    public function delete(int $categoryId, User $user): void
     {
-        $category = $this->findOwned($categoryId, $userId);
+        $category = $this->findAuthorized($categoryId, $user, 'delete');
 
-        $goalsCount = $category->goals()->count();
+        $goalsCount = $this->repo->goalsCount($category);
         if ($goalsCount > 0) {
             throw new DomainException(
                 "Нельзя удалить категорию: в ней {$goalsCount} ".
@@ -80,43 +65,27 @@ class CategoryService
             );
         }
 
-        $category->delete();
+        $this->repo->delete($category);
     }
 
     /**
      * Возвращает доступную пользователю категорию или 403/404.
-     * Используется при валидации category_id для goals.
+     * Используется при формировании select-вью с категориями.
      */
-    public function findAvailable(int $categoryId, int $userId): Category
+    public function findAvailable(int $categoryId, User $user): Category
     {
-        $category = Category::find($categoryId);
-
-        if (! $category) {
-            abort(404);
-        }
-
-        if (! $category->is_system && $category->user_id !== $userId) {
-            abort(403);
-        }
-
-        return $category;
+        return $this->findAuthorized($categoryId, $user, 'view');
     }
 
-    private function findOwned(int $categoryId, int $userId): Category
+    private function findAuthorized(int $categoryId, User $user, string $ability): Category
     {
-        $category = Category::find($categoryId);
+        $category = $this->repo->findById($categoryId);
 
         if (! $category) {
             abort(404);
         }
 
-        if ($category->is_system) {
-            throw new DomainException('Системные категории нельзя изменять или удалять.');
-        }
-
-        if ($category->user_id !== $userId) {
-            abort(403);
-        }
+        Gate::forUser($user)->authorize($ability, $category);
 
         return $category;
     }

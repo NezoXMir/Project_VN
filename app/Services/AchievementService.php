@@ -2,15 +2,19 @@
 
 namespace App\Services;
 
+use App\Helpers\StreakCalculator;
 use App\Models\Achievement;
 use App\Models\Category;
 use App\Models\Goal;
 use App\Models\Task;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class AchievementService
 {
+    public function __construct(private readonly StreakCalculator $streak)
+    {
+    }
+
     /**
      * Проверяет все 8 правил и разблокирует те, что юзер заслужил
      * и которые ещё не разблокированы. Возвращает массив только что
@@ -79,7 +83,7 @@ class AchievementService
             ->where('status', 'completed')
             ->count();
 
-        $streak = $this->currentStreak($userId);
+        $streak = $this->streak->compute($userId);
 
         $hasOwnCategory = Category::query()
             ->where('user_id', $userId)
@@ -130,42 +134,7 @@ class AchievementService
 
     private function checkStreak(int $userId, int $threshold): bool
     {
-        return $this->currentStreak($userId) >= $threshold;
-    }
-
-    private function currentStreak(int $userId): int
-    {
-        $dates = Task::query()
-            ->whereHas('subtask.goal', fn ($q) => $q->where('user_id', $userId))
-            ->whereNotNull('completed_at')
-            ->selectRaw('DATE(completed_at) as d')
-            ->distinct()
-            ->orderByDesc('d')
-            ->pluck('d')
-            ->map(fn ($d) => Carbon::parse($d)->toDateString())
-            ->all();
-
-        if (empty($dates)) {
-            return 0;
-        }
-
-        $set = array_flip($dates);
-        $cursor = Carbon::today();
-
-        if (! isset($set[$cursor->toDateString()])) {
-            $cursor = $cursor->subDay();
-            if (! isset($set[$cursor->toDateString()])) {
-                return 0;
-            }
-        }
-
-        $streak = 0;
-        while (isset($set[$cursor->toDateString()])) {
-            $streak++;
-            $cursor = $cursor->subDay();
-        }
-
-        return $streak;
+        return $this->streak->compute($userId) >= $threshold;
     }
 
     private function checkOwnCategory(int $userId): bool

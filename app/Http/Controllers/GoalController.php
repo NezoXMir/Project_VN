@@ -44,26 +44,22 @@ class GoalController extends Controller
 
     public function show(int $goal): View
     {
-        $model = $this->goals->get($goal, (int) Auth::id());
-
         return view('goals.show', [
-            'goal' => $model,
+            'goal' => $this->goals->get($goal, Auth::user()),
         ]);
     }
 
     public function edit(int $goal): View
     {
-        $model = $this->goals->get($goal, (int) Auth::id());
-
         return view('goals.edit', [
-            'goal' => $model,
+            'goal' => $this->goals->get($goal, Auth::user()),
             'categories' => $this->categories->listAvailable((int) Auth::id()),
         ]);
     }
 
     public function update(GoalRequest $request, int $goal): RedirectResponse
     {
-        $this->goals->update($goal, (int) Auth::id(), $request->validated());
+        $this->goals->update($goal, Auth::user(), $request->validated());
 
         return redirect()
             ->route('goals.show', $goal)
@@ -72,7 +68,7 @@ class GoalController extends Controller
 
     public function destroy(int $goal): RedirectResponse
     {
-        $this->goals->delete($goal, (int) Auth::id());
+        $this->goals->delete($goal, Auth::user());
 
         return redirect()
             ->route('goals.index')
@@ -81,7 +77,7 @@ class GoalController extends Controller
 
     public function archive(int $goal): RedirectResponse
     {
-        $this->goals->archive($goal, (int) Auth::id());
+        $this->goals->archive($goal, Auth::user());
 
         return redirect()
             ->route('goals.show', $goal)
@@ -90,9 +86,9 @@ class GoalController extends Controller
 
     public function complete(int $goal): RedirectResponse
     {
-        $userId = (int) Auth::id();
-        $this->goals->complete($goal, $userId);
-        $unlocked = $this->achievements->check($userId);
+        $user = Auth::user();
+        $this->goals->complete($goal, $user);
+        $unlocked = $this->achievements->check($user->id);
 
         $message = 'Цель отмечена как завершённая.';
         if (! empty($unlocked)) {

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Helpers\StreakCalculator;
 use App\Models\Goal;
 use App\Models\Task;
 use Illuminate\Support\Carbon;
@@ -12,6 +13,10 @@ class RecommendationService
     private const SEVERITY_INFO = 'info';
     private const SEVERITY_WARNING = 'warning';
     private const SEVERITY_DANGER = 'danger';
+
+    public function __construct(private readonly StreakCalculator $streak)
+    {
+    }
 
     /**
      * Анализирует состояние пользователя по 7 правилам и возвращает
@@ -144,7 +149,7 @@ class RecommendationService
 
     private function checkStreak(Collection $goals, int $userId): ?array
     {
-        $streak = $this->computeStreak($userId);
+        $streak = $this->streak->compute($userId);
         if ($streak < 3) {
             return null;
         }
@@ -247,44 +252,4 @@ class RecommendationService
         ];
     }
 
-    /**
-     * Серия подряд идущих дней с хотя бы одной завершённой задачей.
-     * Дублируется со StatsService::currentStreak — здесь живёт
-     * ради независимости сервиса. При желании выносится в
-     * отдельный StreakCalculator.
-     */
-    private function computeStreak(int $userId): int
-    {
-        $dates = Task::query()
-            ->whereHas('subtask.goal', fn ($q) => $q->where('user_id', $userId))
-            ->whereNotNull('completed_at')
-            ->selectRaw('DATE(completed_at) as d')
-            ->distinct()
-            ->orderByDesc('d')
-            ->pluck('d')
-            ->map(fn ($d) => Carbon::parse($d)->toDateString())
-            ->all();
-
-        if (empty($dates)) {
-            return 0;
-        }
-
-        $set = array_flip($dates);
-        $cursor = Carbon::today();
-
-        if (! isset($set[$cursor->toDateString()])) {
-            $cursor = $cursor->subDay();
-            if (! isset($set[$cursor->toDateString()])) {
-                return 0;
-            }
-        }
-
-        $streak = 0;
-        while (isset($set[$cursor->toDateString()])) {
-            $streak++;
-            $cursor = $cursor->subDay();
-        }
-
-        return $streak;
-    }
 }

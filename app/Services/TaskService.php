@@ -4,76 +4,82 @@ namespace App\Services;
 
 use App\Models\Subtask;
 use App\Models\Task;
+use App\Models\User;
+use App\Repositories\SubtaskRepository;
+use App\Repositories\TaskRepository;
+use Illuminate\Support\Facades\Gate;
 
 class TaskService
 {
-    public function create(int $subtaskId, int $userId, array $data): Task
+    public function __construct(
+        private readonly TaskRepository $repo,
+        private readonly SubtaskRepository $subtaskRepo,
+    ) {
+    }
+
+    public function create(int $subtaskId, User $user, array $data): Task
     {
-        $subtask = $this->findOwnedSubtask($subtaskId, $userId);
+        $subtask = $this->findOwnedSubtask($subtaskId, $user);
 
-        $position = (int) Task::query()
-            ->where('subtask_id', $subtask->id)
-            ->max('position') + 1;
-
-        return Task::create([
+        return $this->repo->create([
             'subtask_id' => $subtask->id,
             'title' => $data['title'],
             'is_done' => false,
             'completed_at' => null,
-            'position' => $position,
+            'position' => $this->repo->nextPosition($subtask->id),
         ]);
     }
 
-    public function update(int $taskId, int $userId, array $data): Task
+    public function update(int $taskId, User $user, array $data): Task
     {
-        $task = $this->findOwned($taskId, $userId);
-        $task->fill(['title' => $data['title']])->save();
+        $task = $this->findAuthorized($taskId, $user, 'update');
+        $task->fill(['title' => $data['title']]);
 
-        return $task;
+        return $this->repo->save($task);
     }
 
-    public function toggle(int $taskId, int $userId): Task
+    public function toggle(int $taskId, User $user): Task
     {
-        $task = $this->findOwned($taskId, $userId);
+        $task = $this->findAuthorized($taskId, $user, 'toggle');
         $task->is_done = ! $task->is_done;
         $task->completed_at = $task->is_done ? now() : null;
-        $task->save();
 
-        return $task;
+        return $this->repo->save($task);
     }
 
-    public function delete(int $taskId, int $userId): void
+    public function delete(int $taskId, User $user): void
     {
-        $task = $this->findOwned($taskId, $userId);
-        $task->delete();
+        $task = $this->findAuthorized($taskId, $user, 'delete');
+        $this->repo->delete($task);
     }
 
-    public function findOwned(int $taskId, int $userId): Task
+    public function findOwned(int $taskId, User $user): Task
     {
-        $task = Task::with('subtask.goal')->find($taskId);
+        return $this->findAuthorized($taskId, $user, 'view');
+    }
+
+    private function findAuthorized(int $taskId, User $user, string $ability): Task
+    {
+        $task = $this->repo->findWithChain($taskId);
 
         if (! $task) {
             abort(404);
         }
 
-        if ($task->subtask->goal->user_id !== $userId) {
-            abort(403);
-        }
+        Gate::forUser($user)->authorize($ability, $task);
 
         return $task;
     }
 
-    private function findOwnedSubtask(int $subtaskId, int $userId): Subtask
+    private function findOwnedSubtask(int $subtaskId, User $user): Subtask
     {
-        $subtask = Subtask::with('goal')->find($subtaskId);
+        $subtask = $this->subtaskRepo->findWithGoal($subtaskId);
 
         if (! $subtask) {
             abort(404);
         }
 
-        if ($subtask->goal->user_id !== $userId) {
-            abort(403);
-        }
+        Gate::forUser($user)->authorize('update', $subtask);
 
         return $subtask;
     }

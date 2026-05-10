@@ -73,7 +73,11 @@ class CategoryController extends Controller
 
     public function edit(int $category): View
     {
-        $model = $this->categories->findAvailable($category, (int) Auth::id());
+        // findAuthorized с ability='view' разрешает системные тоже,
+        // поэтому отдельной проверкой здесь блокируем редактирование
+        // системной — даём 403 раньше, чем форма откроется и сабмит
+        // отвалится на CategoryPolicy::update.
+        $model = $this->categories->findAvailable($category, Auth::user());
 
         if ($model->is_system) {
             abort(403, 'Системные категории нельзя редактировать.');
@@ -89,7 +93,7 @@ class CategoryController extends Controller
     public function update(CategoryRequest $request, int $category): RedirectResponse
     {
         try {
-            $this->categories->update($category, (int) Auth::id(), $request->validated());
+            $this->categories->update($category, Auth::user(), $request->validated());
         } catch (DomainException $e) {
             return back()->withInput()->with('error', $e->getMessage());
         }
@@ -102,7 +106,7 @@ class CategoryController extends Controller
     public function destroy(int $category): RedirectResponse
     {
         try {
-            $this->categories->delete($category, (int) Auth::id());
+            $this->categories->delete($category, Auth::user());
         } catch (DomainException $e) {
             return back()->with('error', $e->getMessage());
         }

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Helpers\StreakCalculator;
 use App\Models\Goal;
 use App\Models\Task;
 use Illuminate\Support\Carbon;
@@ -10,6 +11,10 @@ use Illuminate\Support\Facades\DB;
 
 class StatsService
 {
+    public function __construct(private readonly StreakCalculator $streak)
+    {
+    }
+
     /**
      * Полный snapshot для дашборда: счётчики, серия, активность за 30 дней,
      * ближайшие дедлайны. Один публичный метод — контроллер не должен
@@ -35,50 +40,10 @@ class StatsService
             'total_tasks' => $totalTasks,
             'done_tasks' => $doneTasks,
             'overall_progress' => $totalTasks === 0 ? 0 : (int) round($doneTasks / $totalTasks * 100),
-            'streak' => $this->currentStreak($userId),
+            'streak' => $this->streak->compute($userId),
             'activity_30d' => $this->activity($userId, 30),
             'upcoming_deadlines' => $this->upcomingDeadlines($goals, 14),
         ];
-    }
-
-    /**
-     * Серия подряд идущих дней с хотя бы одной завершённой задачей,
-     * считая от сегодня (или вчера, если сегодня пусто).
-     */
-    private function currentStreak(int $userId): int
-    {
-        $dates = Task::query()
-            ->whereHas('subtask.goal', fn ($q) => $q->where('user_id', $userId))
-            ->whereNotNull('completed_at')
-            ->selectRaw('DATE(completed_at) as d')
-            ->distinct()
-            ->orderByDesc('d')
-            ->pluck('d')
-            ->map(fn ($d) => Carbon::parse($d)->toDateString())
-            ->all();
-
-        if (empty($dates)) {
-            return 0;
-        }
-
-        $set = array_flip($dates);
-        $cursor = Carbon::today();
-
-        // Если сегодня нет активности, серия может всё ещё идти, считая от вчера.
-        if (! isset($set[$cursor->toDateString()])) {
-            $cursor = $cursor->subDay();
-            if (! isset($set[$cursor->toDateString()])) {
-                return 0;
-            }
-        }
-
-        $streak = 0;
-        while (isset($set[$cursor->toDateString()])) {
-            $streak++;
-            $cursor = $cursor->subDay();
-        }
-
-        return $streak;
     }
 
     /**
