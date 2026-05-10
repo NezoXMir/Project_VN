@@ -3,6 +3,7 @@
 use App\Http\Controllers\AchievementController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Api\GoalApiController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
@@ -81,6 +82,16 @@ Route::middleware('auth')->group(function () {
         ->whereNumber('task')->name('tasks.toggle');
     Route::delete('/tasks/{task}', [TaskController::class, 'destroy'])
         ->whereNumber('task')->name('tasks.destroy');
+
+    // Demo REST API — тот же session-cookie auth, что и веб-интерфейс
+    Route::prefix('api')->group(function () {
+        Route::get('/goals', [GoalApiController::class, 'index'])->name('api.goals.index');
+        Route::post('/goals', [GoalApiController::class, 'store'])->name('api.goals.store');
+        Route::get('/goals/{goal}', [GoalApiController::class, 'show'])
+            ->whereNumber('goal')
+            ->name('api.goals.show');
+        Route::get('/user/stats', [GoalApiController::class, 'userStats'])->name('api.user.stats');
+    });
 
     Route::middleware('admin')
         ->prefix('admin')
