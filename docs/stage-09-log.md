@@ -3,6 +3,7 @@
 ## Цель
 
 Дать пользователю два канала уведомлений о его целях:
+
 - **In-app** — bell-иконка с dropdown в шапке дашборда, счётчик
   непрочитанных, кнопки «прочитать одно / все».
 - **Email** — ежедневное письмо в 9:00 (cron) с просроченными и
@@ -126,8 +127,7 @@ MAIL_FROM_ADDRESS="noreply@yourdomain.ru"
 MAIL_FROM_NAME="${APP_NAME}"
 ```
 
-После правки `.env` — `php artisan config:clear` и `php artisan
-serve` (или просто перезапуск). Проверить можно командой:
+После правки `.env` — `php artisan config:clear` и `php artisan serve` (или просто перезапуск). Проверить можно командой:
 
 ```bash
 php artisan reminders:send
@@ -237,34 +237,34 @@ php artisan schedule:list
 
 ## Smoke-чеклист
 
-- [x] **`function_exists('mb_strcut')`** на машине разработки
-      → `NO`. Это и подтолкнуло к view-based email вместо
-      markdown.
-- [x] **ReminderService::buildSummary** на чистом юзере
-      → `null` (нет ничего, не шлём).
-- [x] Создать просроченную + приближающуюся цели → buildSummary
-      возвращает массив с обеими.
-- [x] **`php artisan reminders:send`** → «Отправлено: 3,
-      пропущено: 2». В БД создалось уведомление, в
-      `laravel.log` — отрендеренный HTML письма
-      («Здравствуйте, Мирослав!»).
-- [x] **GET /dashboard** под user → 200, bell-блок
-      рендерится с counter unread.
-- [x] **POST /notifications/read-all** через AJAX → 200,
-      `{"ok":true}`. Перепроверка БД → unread = 0.
-- [x] **`php artisan schedule:list`** показывает
-      `reminders:send` daily at 09:00 (Europe/Moscow).
+- [X] **`function_exists('mb_strcut')`** на машине разработки
+  → `NO`. Это и подтолкнуло к view-based email вместо
+  markdown.
+- [X] **ReminderService::buildSummary** на чистом юзере
+  → `null` (нет ничего, не шлём).
+- [X] Создать просроченную + приближающуюся цели → buildSummary
+  возвращает массив с обеими.
+- [X] **`php artisan reminders:send`** → «Отправлено: 3,
+  пропущено: 2». В БД создалось уведомление, в
+  `laravel.log` — отрендеренный HTML письма
+  («Здравствуйте, Мирослав!»).
+- [X] **GET /dashboard** под user → 200, bell-блок
+  рендерится с counter unread.
+- [X] **POST /notifications/read-all** через AJAX → 200,
+  `{"ok":true}`. Перепроверка БД → unread = 0.
+- [X] **`php artisan schedule:list`** показывает
+  `reminders:send` daily at 09:00 (Europe/Moscow).
 
 В браузере (вручную):
 
 - [ ] На дашборде кликнуть bell → раскрывается dropdown,
-      виден список уведомлений с датами.
+  виден список уведомлений с датами.
 - [ ] Кнопка «Прочитать все» → счётчик обнулился, dropdown
-      опустел.
+  опустел.
 - [ ] В профиле снять чекбокс «Получать email-напоминания»
-      → сохранить → запустить `reminders:send` повторно →
-      bell-уведомление пришло, в `laravel.log` нового письма
-      нет (для этого юзера).
+  → сохранить → запустить `reminders:send` повторно →
+  bell-уведомление пришло, в `laravel.log` нового письма
+  нет (для этого юзера).
 
 ## Notes (нетривиальные обоснования)
 
@@ -277,7 +277,6 @@ php artisan schedule:list
    методы Mailable у нас не работает, потому что мы используем
    `MailMessage` (упрощённая обёртка). Если в будущем понадобится
    полноценный `Mailable`, переключим — пока этого хватает.
-
 2. **Почему `prepareForValidation` для checkbox, а не правило
    `accepted_if`.** HTML checkbox не отправляет поле когда
    не отмечен (вместо `false` его просто нет в payload).
@@ -286,26 +285,22 @@ php artisan schedule:list
    `(bool) ($data['email_reminders_enabled'] ?? false)` в
    сервисе ломается на edge cases. `prepareForValidation` с
    `$this->boolean(...)` гарантирует приведение к `false`.
-
 3. **Почему уведомление в БД создаётся даже когда mail-канал
    выключен.** Это сознательно: bell — внутренний канал,
    не связанный с почтой. Юзер мог отключить почту чтобы
    не спамили, но всё равно хочет видеть напоминания в
    приложении. Поэтому `via()` всегда содержит `'database'`,
    а `'mail'` только условно.
-
 4. **Почему `chunk(100)` в команде, а не `each()` или `all()->each()`.**
    `chunk` загружает по 100 пользователей за раз — на
    большой базе (10k+ юзеров) `all()` съест RAM. Для дипломного
    проекта с десятком юзеров разницы нет, но привычка важна.
-
 5. **Почему scheduler регистрируется в `routes/console.php`,
    а не в `app/Console/Kernel.php` (как в Laravel 10).**
    Laravel 11 убрал `Console\Kernel` — расписание объявляется
    декларативно в `routes/console.php` через
    фасад `Schedule::command(...)`. Это чище и поощряет
    функциональный стиль.
-
 6. **Почему текстовая версия письма обязательна, а не
    только HTML.** Многие email-клиенты (особенно корпоративные)
    рендерят plain-text, если он есть, или показывают
