@@ -15,7 +15,7 @@ git clone git@github.com:NezoXMir/Project_VN.git
 cd Project_VN
 
 # 1. PHP-зависимости
-composer install
+composer update
 
 # 2. Окружение
 cp .env.example .env
@@ -28,6 +28,7 @@ php artisan key:generate
 
 # 4. Создать БД
 mysql -u root -p -e "CREATE DATABASE virtual_mentor CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+либо вручную (virtual_mentor -> utf8 -> utf8_general_ci)
 
 # 5. Миграции и тестовые данные
 php artisan migrate --seed
@@ -41,24 +42,24 @@ php artisan serve   # http://localhost:8000
 
 ## Тестовые аккаунты (после `db:seed`)
 
-| Email | Пароль | Роль |
-|-------|--------|------|
+| Email                 | Пароль | Роль  |
+| --------------------- | ------------ | --------- |
 | `admin@example.com` | `password` | `admin` |
-| `user@example.com` | `password` | `user` |
+| `user@example.com`  | `password` | `user`  |
 
 ## Переменные окружения
 
-| Переменная | Описание | Обязательная |
-|---|---|---|
-| `APP_URL` | Публичный URL приложения (важно для ссылок в email) | Да (`http://localhost:8000` для dev) |
-| `DB_DATABASE` | Имя базы данных MySQL | Да |
-| `DB_USERNAME` | Пользователь MySQL | Да |
-| `DB_PASSWORD` | Пароль MySQL | Да |
-| `MAIL_MAILER` | `log` для dev (письма в storage/logs), `smtp` для реальной отправки | Нет |
-| `MAIL_HOST` | SMTP сервер (например `sandbox.smtp.mailtrap.io`) | Только для smtp |
-| `MAIL_PORT` | SMTP порт (587 для tls, 465 для ssl, 2525 для Mailtrap) | Только для smtp |
-| `MAIL_USERNAME` | SMTP логин | Только для smtp |
-| `MAIL_PASSWORD` | SMTP пароль | Только для smtp |
+| Переменная | Описание                                                                                     | Обязательная                    |
+| -------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| `APP_URL`          | Публичный URL приложения (важно для ссылок в email)                | Да (`http://localhost:8000` для dev) |
+| `DB_DATABASE`      | Имя базы данных MySQL                                                                   | Да                                        |
+| `DB_USERNAME`      | Пользователь MySQL                                                                       | Да                                        |
+| `DB_PASSWORD`      | Пароль MySQL                                                                                   | Да                                        |
+| `MAIL_MAILER`      | `log` для dev (письма в storage/logs), `smtp` для реальной отправки | Нет                                      |
+| `MAIL_HOST`        | SMTP сервер (например `sandbox.smtp.mailtrap.io`)                                    | Только для smtp                    |
+| `MAIL_PORT`        | SMTP порт (587 для tls, 465 для ssl, 2525 для Mailtrap)                                 | Только для smtp                    |
+| `MAIL_USERNAME`    | SMTP логин                                                                                      | Только для smtp                    |
+| `MAIL_PASSWORD`    | SMTP пароль                                                                                    | Только для smtp                    |
 
 ## Artisan-команды
 
@@ -89,6 +90,7 @@ Route → Middleware (auth/admin) → Controller (тонкий)
 ```
 
 **Слои:**
+
 - **Controllers** (`app/Http/Controllers/`) — принимают HTTP, делегируют в сервис, возвращают response
 - **Services** (`app/Services/`) — бизнес-логика, оркестрация, авторизация через `Gate::authorize()`
 - **Repositories** (`app/Repositories/`) — все Eloquent-запросы. Сервисы НЕ обращаются к моделям напрямую
@@ -116,15 +118,10 @@ php artisan test
 ## Нюансы и подводные камни
 
 - **`mb_strcut` deprecated в PHP 8.5** — Laravel-овский `MailMessage->line()` использует commonmark, который требует эту функцию. Поэтому email-шаблоны написаны через `view()` напрямую (`emails/daily-reminder.blade.php`), без markdown-цепочки. Не сломается на Windows-сборках PHP без полного mbstring.
-
 - **`MAIL_MAILER=log` по умолчанию** — все письма пишутся в `storage/logs/laravel.log`. Удобно для разработки, не уходят наружу. Для реальной отправки переключить на `smtp` (см. таблицу env).
-
 - **Mailtrap free-rate-limit** — на бесплатном тарифе ловит ~3 письма за burst. Команда `reminders:send` имеет `usleep(2_000_000)` между отправками. Для теста одного письма используй `--user=email@example.com`.
-
 - **Системные категории** (Учёба / Спорт / Работа) вставляются в миграции, не в seeder — это часть схемы. Без них приложение не работает (FK на `goals.category_id`).
-
 - **PDF-экспорт** в админке отложен (см. `docs/stage-06-admin-log.md`). Был пробным образом сделан через `dompdf` / `window.print()` / `html2canvas+jsPDF`, но не дошёл до production-качества из-за рендер-конфликтов. Дашборд показывает все агрегаты на странице.
-
 - **Авторизация на сервис-уровне.** Сервисы вызывают `Gate::forUser($user)->authorize($ability, $model)` сами — контроллеру не нужно дополнительно `$this->authorize()`. Стандартная Laravel-практика — на уровне контроллера, но мы выбрали сервис-уровень для safer-by-default (нельзя вызвать мутирующий метод сервиса в обход проверки).
 
 ## Структура проекта
