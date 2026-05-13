@@ -12,13 +12,18 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SubtaskController;
 use App\Http\Controllers\TaskController;
+use App\Support\HomePath;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return Auth::check()
-        ? redirect('/dashboard')
-        : redirect('/login');
+    if (! Auth::check()) {
+        return redirect('/login');
+    }
+
+    // Решение «куда отправить» вынесено в HomePath, чтобы любой код,
+    // дёргающий «домашнюю страницу», не дублировал if isStaff().
+    return redirect(HomePath::for(Auth::user()));
 })->name('home');
 
 Route::get('/healthz', function () {
@@ -93,15 +98,32 @@ Route::middleware('auth')->group(function () {
         Route::get('/user/stats', [GoalApiController::class, 'userStats'])->name('api.user.stats');
     });
 
-    Route::middleware('admin')
+    // Группа admin/* открыта для admin и manager (middleware 'staff').
+    // Разграничение возможностей внутри — на уровне Policy.
+    Route::middleware('staff')
         ->prefix('admin')
         ->name('admin.')
         ->group(function () {
             Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
 
+            // Управление пользователями
             Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
+            Route::get('/users/create', [AdminUserController::class, 'create'])->name('users.create');
+            Route::post('/users', [AdminUserController::class, 'store'])->name('users.store');
+            Route::get('/users/{id}', [AdminUserController::class, 'show'])
+                ->whereNumber('id')->name('users.show');
+            Route::get('/users/{id}/edit', [AdminUserController::class, 'edit'])
+                ->whereNumber('id')->name('users.edit');
+            Route::patch('/users/{id}', [AdminUserController::class, 'update'])
+                ->whereNumber('id')->name('users.update');
+            Route::delete('/users/{id}', [AdminUserController::class, 'destroy'])
+                ->whereNumber('id')->name('users.destroy');
+            Route::post('/users/{id}/block', [AdminUserController::class, 'block'])
+                ->whereNumber('id')->name('users.block');
+            Route::post('/users/{id}/unblock', [AdminUserController::class, 'unblock'])
+                ->whereNumber('id')->name('users.unblock');
+            // legacy: точечное изменение роли — оставлено для совместимости
             Route::patch('/users/{id}/role', [AdminUserController::class, 'updateRole'])
-                ->whereNumber('id')
-                ->name('users.update-role');
+                ->whereNumber('id')->name('users.update-role');
         });
 });

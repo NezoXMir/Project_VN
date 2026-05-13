@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
 use App\Services\AuthService;
+use App\Support\HomePath;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
 class AuthController extends Controller
@@ -24,6 +26,8 @@ class AuthController extends Controller
     {
         $this->auth->register($request->validated());
 
+        // Регистрация всегда создаёт обычного пользователя — staff
+        // заводится только админом. Поэтому жёстко на /dashboard.
         return redirect()->intended('/dashboard')
             ->with('success', 'Регистрация прошла успешно. Добро пожаловать!');
     }
@@ -44,7 +48,19 @@ class AuthController extends Controller
                 ->withErrors(['email' => 'Неверный email или пароль.']);
         }
 
-        return redirect()->intended('/dashboard');
+        $user = Auth::user();
+
+        // Заблокированный пользователь не должен зайти. AuthService
+        // уже залогинил его — выкидываем сразу и стираем сессию.
+        if ($user && $user->isBlocked()) {
+            $this->auth->logout();
+
+            return back()
+                ->withInput($request->only('email'))
+                ->withErrors(['email' => 'Аккаунт заблокирован администратором.']);
+        }
+
+        return redirect()->intended(HomePath::for($user));
     }
 
     public function logout(Request $request): RedirectResponse

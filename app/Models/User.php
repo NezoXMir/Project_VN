@@ -26,14 +26,46 @@ class User extends Authenticatable
         'avatar_path',
         'bio',
         'email_reminders_enabled',
+        'blocked_at',
     ];
 
     public const ROLE_USER = 'user';
+    public const ROLE_MANAGER = 'manager';
     public const ROLE_ADMIN = 'admin';
 
     public function isAdmin(): bool
     {
         return $this->role === self::ROLE_ADMIN;
+    }
+
+    public function isManager(): bool
+    {
+        return $this->role === self::ROLE_MANAGER;
+    }
+
+    /**
+     * Любой представитель административного интерфейса (admin или manager).
+     * Используется в middleware/policy чтобы не перечислять оба значения.
+     */
+    public function isStaff(): bool
+    {
+        return $this->role === self::ROLE_ADMIN
+            || $this->role === self::ROLE_MANAGER;
+    }
+
+    public function isBlocked(): bool
+    {
+        return $this->blocked_at !== null;
+    }
+
+    /** Человекочитаемая подпись роли — для админ-таблиц и бейджей. */
+    public function roleLabel(): string
+    {
+        return match ($this->role) {
+            self::ROLE_ADMIN => 'Администратор',
+            self::ROLE_MANAGER => 'Менеджер',
+            default => 'Пользователь',
+        };
     }
 
     public function achievements(): BelongsToMany
@@ -91,6 +123,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'email_reminders_enabled' => 'boolean',
+            'blocked_at' => 'datetime',
         ];
     }
 }
