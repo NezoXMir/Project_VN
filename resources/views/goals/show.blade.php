@@ -49,11 +49,21 @@
                         Завершить
                     </button>
                 </form>
-                <form method="POST" action="{{ route('goals.archive', $goal->id) }}">
+                <form method="POST" action="{{ route('goals.do-archive', $goal->id) }}">
                     @csrf
                     <button type="submit"
                             class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm">
                         В архив
+                    </button>
+                </form>
+            @endif
+
+            @if ($goal->status === 'archived')
+                <form method="POST" action="{{ route('goals.restore', $goal->id) }}">
+                    @csrf
+                    <button type="submit"
+                            class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-4 py-2 rounded-lg text-sm">
+                        Восстановить
                     </button>
                 </form>
             @endif

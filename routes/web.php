@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AchievementController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\ArchiveController as AdminArchiveController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\GoalController as AdminGoalController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
@@ -66,9 +67,14 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('goals', GoalController::class)
         ->whereNumber('goal');
+    Route::get('/goals/archive', [GoalController::class, 'archiveIndex'])
+        ->name('goals.archive');
     Route::post('/goals/{goal}/archive', [GoalController::class, 'archive'])
         ->whereNumber('goal')
-        ->name('goals.archive');
+        ->name('goals.do-archive');
+    Route::post('/goals/{goal}/restore', [GoalController::class, 'restore'])
+        ->whereNumber('goal')
+        ->name('goals.restore');
     Route::post('/goals/{goal}/complete', [GoalController::class, 'complete'])
         ->whereNumber('goal')
         ->name('goals.complete');
@@ -138,6 +144,13 @@ Route::middleware('auth')->group(function () {
                 ->whereNumber('id')->name('goals.restore');
             Route::delete('/goals/{id}', [AdminGoalController::class, 'destroy'])
                 ->whereNumber('id')->name('goals.destroy');
+
+            // Архив целей
+            Route::get('/archive', [AdminArchiveController::class, 'index'])->name('archive.index');
+            Route::post('/archive/{id}/restore', [AdminArchiveController::class, 'restore'])
+                ->whereNumber('id')->name('archive.restore');
+            Route::delete('/archive/{id}', [AdminArchiveController::class, 'destroy'])
+                ->whereNumber('id')->name('archive.destroy');
 
             // Управление категориями
             Route::get('/categories', [AdminCategoryController::class, 'index'])->name('categories.index');

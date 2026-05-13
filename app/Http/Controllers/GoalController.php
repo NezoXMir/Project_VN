@@ -21,9 +21,11 @@ class GoalController extends Controller
 
     public function index(): View
     {
-        return view('goals.index', [
-            'goals' => $this->goals->listForUser((int) Auth::id()),
-        ]);
+        $goals = $this->goals->listForUser((int) Auth::id())
+            ->filter(fn ($g) => $g->status !== \App\Models\Goal::STATUS_ARCHIVED)
+            ->values();
+
+        return view('goals.index', compact('goals'));
     }
 
     public function create(): View
@@ -82,6 +84,24 @@ class GoalController extends Controller
         return redirect()
             ->route('goals.show', $goal)
             ->with('success', 'Цель отправлена в архив.');
+    }
+
+    public function archiveIndex(): View
+    {
+        $goals = $this->goals->listForUser((int) Auth::id())
+            ->filter(fn ($g) => $g->status === \App\Models\Goal::STATUS_ARCHIVED)
+            ->values();
+
+        return view('goals.archive', compact('goals'));
+    }
+
+    public function restore(int $goal): RedirectResponse
+    {
+        $this->goals->restore($goal, Auth::user());
+
+        return redirect()
+            ->route('goals.archive')
+            ->with('success', 'Цель восстановлена.');
     }
 
     public function complete(int $goal): RedirectResponse
