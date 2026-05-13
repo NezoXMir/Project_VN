@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AchievementController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\GoalController as AdminGoalController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Api\GoalApiController;
 use App\Http\Controllers\AuthController;
@@ -125,5 +126,16 @@ Route::middleware('auth')->group(function () {
             // legacy: точечное изменение роли — оставлено для совместимости
             Route::patch('/users/{id}/role', [AdminUserController::class, 'updateRole'])
                 ->whereNumber('id')->name('users.update-role');
+
+            // Управление целями
+            Route::get('/goals', [AdminGoalController::class, 'index'])->name('goals.index');
+            Route::get('/goals/{id}', [AdminGoalController::class, 'show'])
+                ->whereNumber('id')->name('goals.show');
+            Route::post('/goals/{id}/archive', [AdminGoalController::class, 'archive'])
+                ->whereNumber('id')->name('goals.archive');
+            Route::post('/goals/{id}/restore', [AdminGoalController::class, 'restore'])
+                ->whereNumber('id')->name('goals.restore');
+            Route::delete('/goals/{id}', [AdminGoalController::class, 'destroy'])
+                ->whereNumber('id')->name('goals.destroy');
         });
 });
