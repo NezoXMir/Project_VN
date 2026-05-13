@@ -3,6 +3,7 @@
 use App\Http\Controllers\AchievementController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\ArchiveController as AdminArchiveController;
+use App\Http\Controllers\Admin\NotificationController as AdminNotificationController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\GoalController as AdminGoalController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
@@ -151,6 +152,11 @@ Route::middleware('auth')->group(function () {
                 ->whereNumber('id')->name('archive.restore');
             Route::delete('/archive/{id}', [AdminArchiveController::class, 'destroy'])
                 ->whereNumber('id')->name('archive.destroy');
+
+            // Управление уведомлениями
+            Route::get('/notifications', [AdminNotificationController::class, 'index'])->name('notifications.index');
+            Route::delete('/notifications/{id}', [AdminNotificationController::class, 'destroy'])->name('notifications.destroy');
+            Route::post('/notifications/purge', [AdminNotificationController::class, 'purge'])->name('notifications.purge');
 
             // Управление категориями
             Route::get('/categories', [AdminCategoryController::class, 'index'])->name('categories.index');
