@@ -22,6 +22,7 @@ cp .env.example .env
 # Открыть .env, заполнить:
 #   DB_USERNAME, DB_PASSWORD (MySQL)
 #   MAIL_* (по умолчанию log-driver, см. ниже про SMTP)
+#   YANDEX_CAPTCHA_SITEKEY, YANDEX_CAPTCHA_SECRET (для капчи на регистрации)
 
 # 3. Ключ приложения
 php artisan key:generate
@@ -61,6 +62,8 @@ php artisan serve   # http://localhost:8000
 | `MAIL_PORT`        | SMTP порт (587 для tls, 465 для ssl, 2525 для Mailtrap)                                 | Только для smtp                    |
 | `MAIL_USERNAME`    | SMTP логин                                                                                      | Только для smtp                    |
 | `MAIL_PASSWORD`    | SMTP пароль                                                                                    | Только для smtp                    |
+| `YANDEX_CAPTCHA_SITEKEY` | Клиентский ключ Yandex SmartCaptcha (для JS-виджета на странице регистрации) | Да (captcha не работает без него) |
+| `YANDEX_CAPTCHA_SECRET`  | Серверный ключ для валидации токена на бэкенде (`/validate`)                   | Да (captcha не работает без него) |
 
 ## Artisan-команды
 
@@ -151,6 +154,11 @@ php artisan test
 - **Авторизация на сервис-уровне.** Сервисы вызывают `Gate::forUser($user)->authorize($ability, $model)` сами — контроллеру не нужно дополнительно `$this->authorize()`. Стандартная Laravel-практика — на уровне контроллера, но мы выбрали сервис-уровень для safer-by-default (нельзя вызвать мутирующий метод сервиса в обход проверки).
 - **`@can` с class string vs instance** — `@can('staffDelete', Model::class)` передаёт в Policy только 1 аргумент вместо 2, что вызывает 500. Всегда передавай экземпляр модели: `@can('staffDelete', $model)`. Для проверок без модели (admin-only кнопки) используй `auth()->user()->isAdmin()` напрямую.
 - **`DB::table('notifications')` в AdminNotificationService** — Laravel не предоставляет Eloquent-модель для таблицы уведомлений. Все запросы через QueryBuilder с LEFT JOIN на users.
+- **`MessageBag::only()` не существует** — в этой версии Laravel метод `only()` у `MessageBag` отсутствует. В Blade-шаблонах для перебора ошибок конкретных полей используй вложенные `@foreach` с `$errors->get($field)`, а не `$errors->only([...])`.
+- **Yandex SmartCaptcha — ValidationException вместо abort()** — для возврата ошибок капчи используй `throw ValidationException::withMessages(['captcha' => '...'])`. `abort()` принимает HTTP-статус, а не redirect-ответ. `ValidationException` корректно редиректит назад с ошибками через стандартный механизм Laravel.
+- **SmartCaptcha — порядок инициализации** — скрипт виджета загружается с `?render=onload&onload=onSmartCaptchaLoad` в URL. Функция `onSmartCaptchaLoad` вызывается после загрузки SDK и вешает listener на кнопку. Флаг `captchaRendered` защищает от двойного рендера при повторном клике.
+- **Ссылка верификации email — вне middleware auth** — маршрут `email.verify.link` намеренно вынесен за пределы группы `auth`, чтобы пользователь мог открыть письмо в другом браузере. `EmailVerificationController::verifyLink()` сам логинит пользователя если он не аутентифицирован.
+- **Staff обходит верификацию email** — admin и manager создаются вручную через сидер/админку, поэтому `AuthController::login()` не требует от них верификации. Проверка `!$user->isStaff()` защищает от блокировки staff-аккаунтов в петле верификации.
 
 ## Структура проекта
 
@@ -194,10 +202,21 @@ StreakCalculator.php
 
 ```
 AuthController.php
-    RU: Регистрация, вход и выход. При логине проверяет isBlocked() и через
-        HomePath определяет целевую страницу — /dashboard для user,
-        /admin/dashboard для staff.
-    EN: Registration, login, logout. Uses HomePath for post-login redirect.
+    RU: Регистрация, вход и выход. При регистрации валидирует токен Yandex
+        SmartCaptcha через verifyCaptcha() (POST на smartcaptcha API) и
+        отправляет письмо верификации. При логине проверяет isBlocked(),
+        редиректит неверифицированных user на /email/verify, для staff
+        верификация не требуется. Через HomePath определяет целевую страницу.
+    EN: Registration (captcha + email verification), login, logout. HomePath
+        for post-login redirect; unverified non-staff redirected to verify page.
+
+EmailVerificationController.php
+    RU: Верификация email двумя способами: по 6-значному коду (verifyCode)
+        и по подписанной ссылке (verifyLink). show() показывает страницу
+        верификации или редиректит если уже подтверждено. resend() повторно
+        отправляет письмо (throttle 3/мин). Маршрут verifyLink вынесен за
+        пределы auth middleware — ссылка открывается в любом браузере.
+    EN: Email verification — code submission, signed link, resend (throttled).
 
 DashboardController.php
     RU: Главная страница пользователя. Собирает KPI (активные цели, задачи,
@@ -220,7 +239,11 @@ CategoryController.php
 ProfileController.php
     RU: Личный кабинет: обновление имени/email/bio, загрузка аватара,
         смена пароля, удаление аккаунта. Делегирует в ProfileService.
+        При смене email фиксирует изменение до сохранения, затем отправляет
+        письмо верификации через EmailVerificationService и редиректит на
+        страницу подтверждения.
     EN: User profile — update info, avatar upload, password change, delete.
+        Detects email change and sends verification email.
 
 NotificationController.php
     RU: In-app уведомления пользователя: пометить одно или все как прочитанные.
@@ -391,9 +414,13 @@ AdminUserUpdateRequest.php
 User.php
     RU: Eloquent-модель пользователя. Содержит константы ролей
         (ROLE_USER, ROLE_MANAGER, ROLE_ADMIN), методы isAdmin(), isManager(),
-        isStaff(), isBlocked(). Fillable: name, email, password, role,
-        blocked_at, avatar, bio, email_reminders_enabled.
-    EN: User model with role constants and helper methods (isAdmin, isStaff…).
+        isStaff(), isBlocked(), isEmailVerified(). Fillable: name, email,
+        password, role, blocked_at, avatar, bio, email_reminders_enabled,
+        email_verified_at, email_verification_code,
+        email_verification_expires_at. Cast: email_verification_expires_at
+        → datetime.
+    EN: User model with role constants and helper methods (isAdmin, isStaff,
+        isEmailVerified…); includes email verification fields.
 
 Goal.php
     RU: Модель цели. Статусы: active, completed, archived. Скоупы:
@@ -421,6 +448,21 @@ Achievement.php
     RU: Словарная модель достижения (seed-данные). Поля: key, title,
         description, icon. Связь: belongsToMany User через user_achievements.
     EN: Achievement badge definition (seeded data).
+```
+
+---
+
+### `app/Mail/`
+
+```
+EmailVerificationMail.php
+    RU: Laravel Mailable для отправки письма верификации email. Содержит
+        6-значный код (срок действия 30 мин) и подписанную ссылку (24 ч).
+        HTML-шаблон emails/verify-email.blade.php, текстовый фолбэк
+        emails/verify-email-text.blade.php. Поля public readonly:
+        $user, $code, $verifyLink.
+    EN: Mailable for email verification — 6-digit code + signed link,
+        HTML + text templates.
 ```
 
 ---
@@ -513,6 +555,15 @@ AuthService.php
         логин через Auth::attempt, выход.
     EN: User registration, login via Auth::attempt, logout.
 
+EmailVerificationService.php
+    RU: Сервис верификации email. sendVerificationEmail() генерирует 6-значный
+        код (хранится в БД с TTL 30 мин) и подписанную ссылку (URL::temporarySignedRoute,
+        24 ч), отправляет EmailVerificationMail. verifyByCode() проверяет код и
+        его срок, verifyByLink() подтверждает по подписанному URL. markVerified()
+        сохраняет email_verified_at и очищает код.
+    EN: Email verification service — generates code + signed link, verifies both
+        methods, marks email as verified.
+
 GoalService.php
     RU: Бизнес-логика целей: create, update, delete, archive, restore,
         complete. Авторизует через GoalPolicy перед каждым изменением.
@@ -525,9 +576,13 @@ CategoryService.php
 
 ProfileService.php
     RU: Обновление профиля (name, email, bio, avatar), смена пароля
-        с проверкой текущего через Hash::check(). Используется и в
-        пользовательском ProfileController, и в AdminProfileController.
+        с проверкой текущего через Hash::check(). При смене email обнуляет
+        email_verified_at, email_verification_code и
+        email_verification_expires_at — статус верификации сбрасывается.
+        Используется и в пользовательском ProfileController, и в
+        AdminProfileController.
     EN: Profile update and password change — shared by user and admin flows.
+        Resets email verification state when email changes.
 
 StatsService.php
     RU: Агрегаты для пользовательского дашборда: количество активных целей,
@@ -670,6 +725,12 @@ HomePath.php
     RU: Добавляет поле archived_at (timestamp nullable) в goals и расширяет
         ENUM status до ('active','completed','archived').
     EN: Adds archived_at and 'archived' status to goals.
+
+2026_05_13_130000_add_email_verification_code_to_users_table.php
+    RU: Добавляет два поля в таблицу users: email_verification_code (string(6)
+        nullable) — 6-значный числовой код, и email_verification_expires_at
+        (timestamp nullable) — время истечения кода (30 мин от отправки).
+    EN: Adds email_verification_code and email_verification_expires_at to users.
 ```
 
 ---
@@ -679,8 +740,11 @@ HomePath.php
 ```
 AdminSeeder.php
     RU: Создаёт (или обновляет) трёх тестовых пользователей: admin, manager,
-        user. Использует updateOrCreate — безопасен для повторного запуска.
-    EN: Seeds three test accounts (admin, manager, user) with updateOrCreate.
+        user. Все три создаются с email_verified_at = now() чтобы не блокироваться
+        петлёй верификации при демонстрации. Использует updateOrCreate — безопасен
+        для повторного запуска.
+    EN: Seeds three test accounts (admin, manager, user) with updateOrCreate;
+        all pre-verified so demo logins work immediately.
 
 DatabaseSeeder.php
     RU: Главный сидер — вызывается через migrate --seed. Делегирует в
@@ -769,9 +833,21 @@ login.blade.php
     EN: Login page with email/password form.
 
 register.blade.php
-    RU: Страница регистрации. Форма name/email/password/confirmation,
-        валидационные ошибки.
-    EN: Registration page with name, email, password form.
+    RU: Страница регистрации с Yandex SmartCaptcha. Кнопка «Зарегистрироваться»
+        имеет type=button и id=register-btn. По клику отображается контейнер
+        виджета SmartCaptcha (smartCaptcha.render()). После прохождения капчи
+        callback записывает токен в hidden input smart-token и отправляет форму.
+        Флаг captchaRendered предотвращает двойной рендер. SDK подключается через
+        @push('head'), JS — через @push('scripts') в layouts/guest.blade.php.
+    EN: Registration page with Yandex SmartCaptcha — renders widget on button
+        click, submits form only after successful captcha.
+
+verify-email.blade.php
+    RU: Страница верификации email /email/verify. Показывает адрес почты, поле
+        для 6-значного кода (inputmode=numeric, tracking шрифт), кнопку
+        «Подтвердить», разделитель, форму повторной отправки письма (POST
+        email.verification.resend) и ссылку «Продолжить без подтверждения».
+    EN: Email verification page — code input, resend form, skip link.
 ```
 
 ---
@@ -944,9 +1020,13 @@ index.blade.php
 
 ```
 index.blade.php
-    RU: Личный кабинет пользователя /profile. Разделы: основные данные,
-        аватар, смена пароля, опции email-напоминаний, удаление аккаунта.
-    EN: User profile page — info, avatar, password, reminders, delete account.
+    RU: Личный кабинет пользователя /profile. В верхней части карточка статуса
+        верификации email: зелёная с датой если подтверждено, янтарная с кнопкой
+        «Подтвердить email» (POST email.verification.resend) если нет. Далее:
+        основные данные, аватар, смена пароля, опции email-напоминаний, удаление
+        аккаунта.
+    EN: User profile page — verification status card, info, avatar, password,
+        reminders, delete account.
 ```
 
 ---
@@ -963,6 +1043,17 @@ daily-reminder.blade.php
 daily-reminder-text.blade.php
     RU: Plain-text версия того же письма для почтовых клиентов без HTML.
     EN: Plain-text fallback for daily reminder email.
+
+verify-email.blade.php
+    RU: HTML-шаблон письма верификации. Стилизованный блок с 6-значным кодом
+        (dashed border, крупный шрифт, letter-spacing) и кнопка-ссылка для
+        подтверждения одним кликом. Показывает оба способа верификации.
+    EN: Email verification HTML template — styled code block + one-click link.
+
+verify-email-text.blade.php
+    RU: Plain-text фолбэк письма верификации. Содержит код и URL ссылки
+        в текстовом виде для почтовых клиентов без HTML.
+    EN: Plain-text fallback for email verification mail.
 ```
 
 ---
@@ -984,9 +1075,12 @@ dashboard.blade.php
 ```
 web.php
     RU: Все HTTP-маршруты приложения. Структура: guest-группа (login/register),
-        auth-группа → logout + user.only-подгруппа (весь user UI + API) +
+        подписанный маршрут email.verify.link вне auth (чтобы ссылка работала
+        в любом браузере), auth-группа → logout + маршруты email-верификации
+        (show/code/resend) + user.only-подгруппа (весь user UI + API) +
         staff-подгруппа prefix='admin' (вся админ-панель).
-    EN: All app routes — guest, auth/user.only, and admin/staff groups.
+    EN: All app routes — guest, signed email verify link (outside auth), auth
+        group with email verification routes, user.only and admin/staff groups.
 ```
 
 ---

@@ -41,6 +41,8 @@
   серии подряд, отсутствие активности и т.д.
 - **Геймификация:** 8 достижений-бейджей, счётчик серий (streaks)
 - In-app уведомления и ежедневные email-напоминания
+- **Верификация email** — 6-значный код (30 мин) или подписанная ссылка (24 ч);
+  статус отображается в профиле
 - Demo REST API для интеграций
 
 ### Для администратора и менеджера
@@ -64,6 +66,7 @@
 | Frontend                     | **Blade + Alpine.js + Tailwind CSS**   | Без сборщика — все библиотеки через CDN                      |
 | Графики               | **Chart.js 4**                         | Лёгкая визуализация без громоздких зависимостей |
 | Аутентификация | Laravel Session (cookie)                     | HttpOnly сессии, без JWT                                                          |
+| Captcha             | **Yandex SmartCaptcha**                | Защита регистрации от ботов (серверная + клиентская валидация)  |
 | Архитектура       | **MVC + Service Layer + Repositories** | Бизнес-логика отделена от HTTP-слоя                              |
 
 > **Почему CDN, а не npm/vite:** для дипломного проекта важно показать
@@ -75,15 +78,15 @@
 ```
 HTTP-запрос
     ↓
-Route → Middleware (auth / admin) → Controller
-                                         ↓
-                                      Service ← Policy
-                                         ↓
-                                    Repository
-                                         ↓
-                                       Model (Eloquent)
-                                         ↓
-                                       MySQL
+Route → Middleware (auth / staff / user.only / not.blocked) → Controller
+                                                                    ↓
+                                                                 Service ← Policy
+                                                                    ↓
+                                                               Repository
+                                                                    ↓
+                                                              Model (Eloquent)
+                                                                    ↓
+                                                              MySQL
 ```
 
 **Ключевой принцип:** контроллер принимает запрос, делегирует в сервис,
@@ -91,24 +94,27 @@ Route → Middleware (auth / admin) → Controller
 
 ## 🗄️ Схема базы данных
 
-11 доменных таблиц + системные таблицы Laravel:
+10 доменных таблиц + системные таблицы Laravel:
 
 ```
 users ──┬── categories ──┐
         │                ↓
-        ├── goals ──┬── subtasks ── tasks
-        │           │
-        │           └── (deadline как поле)
+        ├── goals ──── subtasks ── tasks
         │
-        ├── activity_logs    (единый лог событий)
-        ├── reminders
-        ├── user_statistics  (кэш агрегатов: streak, totals)
         ├── user_achievements ── achievements
         └── notifications    (Laravel default)
 ```
 
-> `categories` хранит и системные (`user_id = NULL`, `is_system = true`),
-> и пользовательские записи. Цели ссылаются через `category_id`.
+| Таблица | Назначение |
+|---|---|
+| `users` | Пользователи; поля верификации email (`email_verification_code`, `email_verification_expires_at`) |
+| `categories` | Системные (`user_id = NULL`, `is_system = true`) и пользовательские |
+| `goals` | Цели с полями `status` ENUM и `archived_at` |
+| `subtasks` | Подцели, привязаны к цели |
+| `tasks` | Задачи, привязаны к подцели |
+| `achievements` | Словарь 8 бейджей (seed-данные) |
+| `user_achievements` | Связь пользователь ↔ полученный бейдж |
+| `notifications` | Стандартная таблица Laravel (UUID, type, data, read_at) |
 
 ## 🚀 Быстрый старт
 
@@ -130,7 +136,9 @@ composer install
 
 # 3. Настроить окружение
 cp .env.example .env
-# Затем открыть .env и заполнить DB_USERNAME, DB_PASSWORD
+# Затем открыть .env и заполнить:
+#   DB_USERNAME, DB_PASSWORD
+#   YANDEX_CAPTCHA_SITEKEY, YANDEX_CAPTCHA_SECRET (Yandex SmartCaptcha)
 
 # 4. Сгенерировать ключ приложения
 php artisan key:generate
@@ -165,48 +173,51 @@ curl http://localhost:8000/healthz
 app/
 ├── Http/
 │   ├── Controllers/
-│   │   ├── Admin/          # DashboardController, UserController, GoalController,
-│   │   │                   # CategoryController, ArchiveController,
-│   │   │                   # NotificationController, ProfileController
-│   │   ├── Api/            # GoalApiController (demo REST)
-│   │   └── ...             # Auth, Goal, Category, Profile, Subtask, Task
-│   ├── Middleware/         # RequireStaff (staff), ForbidStaffFromUserUi (user.only),
-│   │                       # BlockBannedUsers (not.blocked), RequireAuth
-│   └── Requests/           # Form Request классы (включая Admin/)
-├── Models/                 # User, Goal, Category, Subtask, Task, Achievement
-├── Services/               # Бизнес-логика: AdminStatsService, AdminGoalService,
-│                           # AdminCategoryService, AdminNotificationService,
-│                           # GoalService, UserService, ProfileService и др.
-├── Repositories/           # GoalRepository, CategoryRepository, SubtaskRepository, TaskRepository
-├── Policies/               # GoalPolicy, CategoryPolicy, UserPolicy, SubtaskPolicy, TaskPolicy
-├── Helpers/                # DateHelper (дедлайны), StreakCalculator (серии дней)
-├── Notifications/          # DailyReminder
-├── Console/Commands/       # SendDailyReminders
-└── Support/                # HomePath (редирект после логина)
+│   │   ├── Admin/              # DashboardController, UserController, GoalController,
+│   │   │                       # CategoryController, ArchiveController,
+│   │   │                       # NotificationController, ProfileController
+│   │   ├── Api/                # GoalApiController (demo REST)
+│   │   ├── EmailVerificationController.php  # Верификация кодом и ссылкой
+│   │   └── ...                 # Auth, Goal, Category, Profile, Subtask, Task
+│   ├── Middleware/             # RequireStaff (staff), ForbidStaffFromUserUi (user.only),
+│   │                           # BlockBannedUsers (not.blocked), RequireAuth
+│   └── Requests/               # Form Request классы (включая Admin/)
+├── Mail/                       # EmailVerificationMail (код + подписанная ссылка)
+├── Models/                     # User, Goal, Category, Subtask, Task, Achievement
+├── Services/                   # Бизнес-логика: EmailVerificationService,
+│                               # AdminStatsService, AdminGoalService,
+│                               # AdminCategoryService, AdminNotificationService,
+│                               # GoalService, UserService, ProfileService и др.
+├── Repositories/               # GoalRepository, CategoryRepository, SubtaskRepository, TaskRepository
+├── Policies/                   # GoalPolicy, CategoryPolicy, UserPolicy, SubtaskPolicy, TaskPolicy
+├── Helpers/                    # DateHelper (дедлайны), StreakCalculator (серии дней)
+├── Notifications/              # DailyReminder
+├── Console/Commands/           # SendDailyReminders
+└── Support/                    # HomePath (редирект после логина)
 
 resources/views/
-├── layouts/                # app, guest, admin
-├── components/             # x-card, x-badge, x-progress-bar, x-flash-message
-│   └── admin/              # sidebar, page-header
-├── auth/                   # login, register
-├── goals/                  # index, create, edit, show, archive
-├── categories/             # index, create, edit, _form
+├── layouts/                    # app, guest, admin
+├── components/                 # x-card, x-badge, x-progress-bar, x-flash-message
+│   └── admin/                  # sidebar, page-header
+├── auth/                       # login, register, verify-email
+├── goals/                      # index, create, edit, show, archive
+├── categories/                 # index, create, edit, _form
 ├── admin/
 │   ├── dashboard.blade.php
-│   ├── users/              # index, create, edit, show
-│   ├── goals/              # index, show
-│   ├── categories/         # index, create, edit
-│   ├── archive/            # index
-│   ├── notifications/      # index
-│   └── profile/            # edit
-├── achievements/           # index
-├── profile/                # index
-├── emails/                 # daily-reminder (HTML + text)
-└── errors/                 # 404, 403
+│   ├── users/                  # index, create, edit, show
+│   ├── goals/                  # index, show
+│   ├── categories/             # index, create, edit
+│   ├── archive/                # index
+│   ├── notifications/          # index
+│   └── profile/                # edit
+├── achievements/               # index
+├── profile/                    # index (карточка статуса верификации)
+├── emails/                     # daily-reminder (HTML + text), verify-email (HTML + text)
+└── errors/                     # 404, 403
 
-database/migrations/        # Только append, без редактирования старых
-docs/                       # Логи каждого этапа разработки (admin-panel-log.md и др.)
-tests/Feature/              # AuthTest, GoalTest, TaskTest, AdminTest
+database/migrations/            # Только append, без редактирования старых
+docs/                           # Логи каждого этапа разработки (admin-panel-log.md и др.)
+tests/Feature/                  # AuthTest, GoalTest, TaskTest, AdminTest
 ```
 
 ## 🗺️ Дорожная карта (12 этапов)
@@ -231,6 +242,9 @@ tests/Feature/              # AuthTest, GoalTest, TaskTest, AdminTest
 ## 🔐 Безопасность
 
 - CSRF-токены на всех формах
+- **Yandex SmartCaptcha** на форме регистрации — серверная + клиентская валидация токена
+- **Email верификация** — 6-значный код (TTL 30 мин) или подписанный URL (TTL 24 ч);
+  статус сбрасывается при смене адреса в профиле
 - Middleware `auth` на всех защищённых маршрутах
 - Middleware `staff` на `/admin/*` — пропускает только admin и manager
 - Middleware `user.only` на user UI — staff автоматически перенаправляется в панель
