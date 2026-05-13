@@ -17,12 +17,20 @@ class ProfileService
      */
     public function updateProfile(User $user, array $data, ?UploadedFile $avatar = null): User
     {
+        $emailChanged = isset($data['email']) && $data['email'] !== $user->email;
+
         $user->fill([
             'name' => $data['name'],
             'email' => $data['email'],
             'bio' => $data['bio'] ?? null,
             'email_reminders_enabled' => (bool) ($data['email_reminders_enabled'] ?? false),
         ]);
+
+        if ($emailChanged) {
+            $user->email_verified_at             = null;
+            $user->email_verification_code       = null;
+            $user->email_verification_expires_at = null;
+        }
 
         if ($avatar !== null) {
             // Удаляем старый файл, если был.

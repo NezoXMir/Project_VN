@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AchievementController;
+use App\Http\Controllers\EmailVerificationController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\ArchiveController as AdminArchiveController;
 use App\Http\Controllers\Admin\NotificationController as AdminNotificationController;
@@ -46,9 +47,24 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
 });
 
+// Верификация по ссылке — без auth (пользователь может открыть из другого браузера).
+// Защита обеспечивается подписью Laravel (middleware 'signed').
+Route::get('/email/verify/{id}', [EmailVerificationController::class, 'verifyLink'])
+    ->middleware('signed')
+    ->name('email.verify.link');
+
 Route::middleware('auth')->group(function () {
     // Logout доступен всем аутентифицированным (и user, и staff).
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+    // Подтверждение email
+    Route::get('/email/verify', [EmailVerificationController::class, 'show'])
+        ->name('email.verify.notice');
+    Route::post('/email/verify', [EmailVerificationController::class, 'verifyCode'])
+        ->name('email.verify.code');
+    Route::post('/email/verification-notification', [EmailVerificationController::class, 'resend'])
+        ->middleware('throttle:3,1')
+        ->name('email.verification.resend');
 
     // Пользовательский UI — staff редиректится на /admin/dashboard.
     Route::middleware('user.only')->group(function () {

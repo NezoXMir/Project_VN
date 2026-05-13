@@ -44,8 +44,10 @@
             @if ($errors->has('name') || $errors->has('email'))
                 <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 px-4 py-2 text-sm">
                     <ul class="list-disc list-inside space-y-0.5">
-                        @foreach ($errors->only(['name','email']) as $e)
-                            <li>{{ $e }}</li>
+                        @foreach (['name', 'email'] as $field)
+                            @foreach ($errors->get($field) as $msg)
+                                <li>{{ $msg }}</li>
+                            @endforeach
                         @endforeach
                     </ul>
                 </div>
@@ -80,8 +82,10 @@
             @if ($errors->has('current_password') || $errors->has('password'))
                 <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 px-4 py-2 text-sm">
                     <ul class="list-disc list-inside space-y-0.5">
-                        @foreach ($errors->only(['current_password','password']) as $e)
-                            <li>{{ $e }}</li>
+                        @foreach (['current_password', 'password'] as $field)
+                            @foreach ($errors->get($field) as $msg)
+                                <li>{{ $msg }}</li>
+                            @endforeach
                         @endforeach
                     </ul>
                 </div>

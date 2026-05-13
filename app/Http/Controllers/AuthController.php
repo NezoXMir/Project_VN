@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
 use App\Services\AuthService;
+use App\Services\EmailVerificationService;
 use App\Support\HomePath;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,9 +16,10 @@ use Illuminate\View\View;
 
 class AuthController extends Controller
 {
-    public function __construct(private readonly AuthService $auth)
-    {
-    }
+    public function __construct(
+        private readonly AuthService              $auth,
+        private readonly EmailVerificationService $emailVerification,
+    ) {}
 
     public function showRegister(): View
     {
@@ -28,12 +30,13 @@ class AuthController extends Controller
     {
         $this->verifyCaptcha($request);
 
-        $this->auth->register($request->validated());
+        $user = $this->auth->register($request->validated());
 
-        // Регистрация всегда создаёт обычного пользователя — staff
-        // заводится только админом. Поэтому жёстко на /dashboard.
-        return redirect()->intended('/dashboard')
-            ->with('success', 'Регистрация прошла успешно. Добро пожаловать!');
+        // Отправляем письмо с кодом и ссылкой, затем показываем страницу
+        // подтверждения. Пользователь может пропустить через «Продолжить».
+        $this->emailVerification->sendVerificationEmail($user);
+
+        return redirect()->route('email.verify.notice');
     }
 
     private function verifyCaptcha(Request $request): void
@@ -85,6 +88,14 @@ class AuthController extends Controller
             return back()
                 ->withInput($request->only('email'))
                 ->withErrors(['email' => 'Аккаунт заблокирован администратором.']);
+        }
+
+        // Неподтверждённый обычный пользователь → страница верификации.
+        // Staff создаётся администратором вручную — для них проверка не нужна.
+        if ($user && ! $user->isEmailVerified() && ! $user->isStaff()) {
+            $this->emailVerification->sendVerificationEmail($user);
+
+            return redirect()->route('email.verify.notice');
         }
 
         return redirect()->intended(HomePath::for($user));

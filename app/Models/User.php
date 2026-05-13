@@ -27,6 +27,9 @@ class User extends Authenticatable
         'bio',
         'email_reminders_enabled',
         'blocked_at',
+        'email_verified_at',
+        'email_verification_code',
+        'email_verification_expires_at',
     ];
 
     public const ROLE_USER = 'user';
@@ -56,6 +59,11 @@ class User extends Authenticatable
     public function isBlocked(): bool
     {
         return $this->blocked_at !== null;
+    }
+
+    public function isEmailVerified(): bool
+    {
+        return $this->email_verified_at !== null;
     }
 
     /** Человекочитаемая подпись роли — для админ-таблиц и бейджей. */
@@ -120,10 +128,11 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-            'email_reminders_enabled' => 'boolean',
-            'blocked_at' => 'datetime',
+            'email_verified_at'              => 'datetime',
+            'email_verification_expires_at'  => 'datetime',
+            'password'                       => 'hashed',
+            'email_reminders_enabled'        => 'boolean',
+            'blocked_at'                     => 'datetime',
         ];
     }
 }
