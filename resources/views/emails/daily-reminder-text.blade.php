@@ -9,9 +9,9 @@
 @foreach ($summary['with_deadline'] as $g)
 @php
 $marker = match ($g['tier']) {
-    'red' => '!',
-    'amber' => '~',
-    default => '·',
+'red' => '!',
+'amber' => '~',
+default => '·',
 };
 @endphp
 {{ $marker }} «{{ $g['title'] }}» — {{ $g['deadline'] }} ({{ $g['status_text'] }}@if ($g['category']), {{ $g['category'] }}@endif)
