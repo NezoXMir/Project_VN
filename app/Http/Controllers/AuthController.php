@@ -9,6 +9,8 @@ use App\Support\HomePath;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class AuthController extends Controller
@@ -24,12 +26,37 @@ class AuthController extends Controller
 
     public function register(RegisterRequest $request): RedirectResponse
     {
+        $this->verifyCaptcha($request);
+
         $this->auth->register($request->validated());
 
         // Регистрация всегда создаёт обычного пользователя — staff
         // заводится только админом. Поэтому жёстко на /dashboard.
         return redirect()->intended('/dashboard')
             ->with('success', 'Регистрация прошла успешно. Добро пожаловать!');
+    }
+
+    private function verifyCaptcha(Request $request): void
+    {
+        $token = (string) $request->input('smart-token', '');
+
+        if ($token === '') {
+            throw ValidationException::withMessages([
+                'captcha' => 'Пройдите проверку капчи.',
+            ]);
+        }
+
+        $response = Http::asForm()->post('https://smartcaptcha.yandexcloud.net/validate', [
+            'secret' => config('services.yandex_captcha.secret'),
+            'token'  => $token,
+            'ip'     => $request->ip(),
+        ]);
+
+        if (! $response->successful() || $response->json('status') !== 'ok') {
+            throw ValidationException::withMessages([
+                'captcha' => 'Проверка капчи не пройдена. Попробуйте ещё раз.',
+            ]);
+        }
     }
 
     public function showLogin(): View
