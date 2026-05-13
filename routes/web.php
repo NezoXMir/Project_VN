@@ -47,66 +47,70 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
+    // Logout доступен всем аутентифицированным (и user, и staff).
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    // Пользовательский UI — staff редиректится на /admin/dashboard.
+    Route::middleware('user.only')->group(function () {
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    Route::get('/achievements', [AchievementController::class, 'index'])->name('achievements.index');
+        Route::get('/achievements', [AchievementController::class, 'index'])->name('achievements.index');
 
-    Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead'])
-        ->name('notifications.read');
-    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])
-        ->name('notifications.read-all');
+        Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead'])
+            ->name('notifications.read');
+        Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])
+            ->name('notifications.read-all');
 
-    Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::patch('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+        Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
+        Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+        Route::patch('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
+        Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    Route::resource('categories', CategoryController::class)
-        ->except(['show'])
-        ->whereNumber('category');
+        Route::resource('categories', CategoryController::class)
+            ->except(['show'])
+            ->whereNumber('category');
 
-    Route::resource('goals', GoalController::class)
-        ->whereNumber('goal');
-    Route::get('/goals/archive', [GoalController::class, 'archiveIndex'])
-        ->name('goals.archive');
-    Route::post('/goals/{goal}/archive', [GoalController::class, 'archive'])
-        ->whereNumber('goal')
-        ->name('goals.do-archive');
-    Route::post('/goals/{goal}/restore', [GoalController::class, 'restore'])
-        ->whereNumber('goal')
-        ->name('goals.restore');
-    Route::post('/goals/{goal}/complete', [GoalController::class, 'complete'])
-        ->whereNumber('goal')
-        ->name('goals.complete');
-
-    // Подцели и задачи — JSON-эндпоинты для AJAX из goals/show.
-    Route::post('/goals/{goal}/subtasks', [SubtaskController::class, 'store'])
-        ->whereNumber('goal')->name('subtasks.store');
-    Route::patch('/subtasks/{subtask}', [SubtaskController::class, 'update'])
-        ->whereNumber('subtask')->name('subtasks.update');
-    Route::delete('/subtasks/{subtask}', [SubtaskController::class, 'destroy'])
-        ->whereNumber('subtask')->name('subtasks.destroy');
-
-    Route::post('/subtasks/{subtask}/tasks', [TaskController::class, 'store'])
-        ->whereNumber('subtask')->name('tasks.store');
-    Route::patch('/tasks/{task}', [TaskController::class, 'update'])
-        ->whereNumber('task')->name('tasks.update');
-    Route::post('/tasks/{task}/toggle', [TaskController::class, 'toggle'])
-        ->whereNumber('task')->name('tasks.toggle');
-    Route::delete('/tasks/{task}', [TaskController::class, 'destroy'])
-        ->whereNumber('task')->name('tasks.destroy');
-
-    // Demo REST API — тот же session-cookie auth, что и веб-интерфейс
-    Route::prefix('api')->group(function () {
-        Route::get('/goals', [GoalApiController::class, 'index'])->name('api.goals.index');
-        Route::post('/goals', [GoalApiController::class, 'store'])->name('api.goals.store');
-        Route::get('/goals/{goal}', [GoalApiController::class, 'show'])
+        Route::resource('goals', GoalController::class)
+            ->whereNumber('goal');
+        Route::get('/goals/archive', [GoalController::class, 'archiveIndex'])
+            ->name('goals.archive');
+        Route::post('/goals/{goal}/archive', [GoalController::class, 'archive'])
             ->whereNumber('goal')
-            ->name('api.goals.show');
-        Route::get('/user/stats', [GoalApiController::class, 'userStats'])->name('api.user.stats');
-    });
+            ->name('goals.do-archive');
+        Route::post('/goals/{goal}/restore', [GoalController::class, 'restore'])
+            ->whereNumber('goal')
+            ->name('goals.restore');
+        Route::post('/goals/{goal}/complete', [GoalController::class, 'complete'])
+            ->whereNumber('goal')
+            ->name('goals.complete');
+
+        // Подцели и задачи — JSON-эндпоинты для AJAX из goals/show.
+        Route::post('/goals/{goal}/subtasks', [SubtaskController::class, 'store'])
+            ->whereNumber('goal')->name('subtasks.store');
+        Route::patch('/subtasks/{subtask}', [SubtaskController::class, 'update'])
+            ->whereNumber('subtask')->name('subtasks.update');
+        Route::delete('/subtasks/{subtask}', [SubtaskController::class, 'destroy'])
+            ->whereNumber('subtask')->name('subtasks.destroy');
+
+        Route::post('/subtasks/{subtask}/tasks', [TaskController::class, 'store'])
+            ->whereNumber('subtask')->name('tasks.store');
+        Route::patch('/tasks/{task}', [TaskController::class, 'update'])
+            ->whereNumber('task')->name('tasks.update');
+        Route::post('/tasks/{task}/toggle', [TaskController::class, 'toggle'])
+            ->whereNumber('task')->name('tasks.toggle');
+        Route::delete('/tasks/{task}', [TaskController::class, 'destroy'])
+            ->whereNumber('task')->name('tasks.destroy');
+
+        // Demo REST API — JSON, поэтому ForbidStaffFromUserUi вернёт 403.
+        Route::prefix('api')->group(function () {
+            Route::get('/goals', [GoalApiController::class, 'index'])->name('api.goals.index');
+            Route::post('/goals', [GoalApiController::class, 'store'])->name('api.goals.store');
+            Route::get('/goals/{goal}', [GoalApiController::class, 'show'])
+                ->whereNumber('goal')
+                ->name('api.goals.show');
+            Route::get('/user/stats', [GoalApiController::class, 'userStats'])->name('api.user.stats');
+        });
+    }); // end user.only
 
     // Группа admin/* открыта для admin и manager (middleware 'staff').
     // Разграничение возможностей внутри — на уровне Policy.
