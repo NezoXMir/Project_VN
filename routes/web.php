@@ -4,6 +4,7 @@ use App\Http\Controllers\AchievementController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\ArchiveController as AdminArchiveController;
 use App\Http\Controllers\Admin\NotificationController as AdminNotificationController;
+use App\Http\Controllers\Admin\ProfileController as AdminProfileController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\GoalController as AdminGoalController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
@@ -152,6 +153,11 @@ Route::middleware('auth')->group(function () {
                 ->whereNumber('id')->name('archive.restore');
             Route::delete('/archive/{id}', [AdminArchiveController::class, 'destroy'])
                 ->whereNumber('id')->name('archive.destroy');
+
+            // Профиль staff-пользователя
+            Route::get('/profile/edit', [AdminProfileController::class, 'edit'])->name('profile.edit');
+            Route::patch('/profile', [AdminProfileController::class, 'update'])->name('profile.update');
+            Route::patch('/profile/password', [AdminProfileController::class, 'updatePassword'])->name('profile.password');
 
             // Управление уведомлениями
             Route::get('/notifications', [AdminNotificationController::class, 'index'])->name('notifications.index');
