@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AchievementController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\GoalController as AdminGoalController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Api\GoalApiController;
@@ -137,5 +138,16 @@ Route::middleware('auth')->group(function () {
                 ->whereNumber('id')->name('goals.restore');
             Route::delete('/goals/{id}', [AdminGoalController::class, 'destroy'])
                 ->whereNumber('id')->name('goals.destroy');
+
+            // Управление категориями
+            Route::get('/categories', [AdminCategoryController::class, 'index'])->name('categories.index');
+            Route::get('/categories/create', [AdminCategoryController::class, 'create'])->name('categories.create');
+            Route::post('/categories', [AdminCategoryController::class, 'store'])->name('categories.store');
+            Route::get('/categories/{id}/edit', [AdminCategoryController::class, 'edit'])
+                ->whereNumber('id')->name('categories.edit');
+            Route::patch('/categories/{id}', [AdminCategoryController::class, 'update'])
+                ->whereNumber('id')->name('categories.update');
+            Route::delete('/categories/{id}', [AdminCategoryController::class, 'destroy'])
+                ->whereNumber('id')->name('categories.destroy');
         });
 });
