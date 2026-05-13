@@ -43,11 +43,17 @@
 - In-app уведомления и ежедневные email-напоминания
 - Demo REST API для интеграций
 
-### Для администратора
+### Для администратора и менеджера
 
-- Отдельная панель `/admin/dashboard` с системными KPI и графиками
-- Управление ролями пользователей (защита: нельзя понизить последнего admin)
-- **Без доступа** к персональным данным пользователей — только агрегаты
+- Отдельная панель `/admin/dashboard` с системными KPI и графиками активности
+- Управление пользователями: список с фильтрами, создание, редактирование, блокировка/разблокировка, удаление
+- Управление целями: просмотр, архивирование, восстановление, удаление любой цели
+- Управление категориями: создание и редактирование системных категорий
+- Архив целей: единая таблица всех архивных целей системы
+- Управление уведомлениями: просмотр, фильтрация, очистка прочитанных
+- Профиль staff: смена имени/email и пароля прямо в панели
+- **Роль менеджера** — доступ к большинству разделов, без права удалять пользователей/цели и создавать категории
+- Защита: нельзя удалить последнего администратора; staff не может зайти в user UI
 
 ## 🛠️ Стек технологий
 
@@ -140,10 +146,11 @@ php artisan serve
 
 ### Тестовые аккаунты (после `db:seed`)
 
-| Email                 | Пароль | Роль  |
-| --------------------- | ------------ | --------- |
-| `admin@example.com` | `password` | `admin` |
-| `user@example.com`  | `password` | `user`  |
+| Email                   | Пароль     | Роль      | Стартовая страница      |
+| ----------------------- | ---------- | --------- | ----------------------- |
+| `admin@example.com`   | `password` | `admin`   | `/admin/dashboard`      |
+| `manager@example.com` | `password` | `manager` | `/admin/dashboard`      |
+| `user@example.com`    | `password` | `user`    | `/dashboard`            |
 
 ### Healthcheck
 
@@ -157,28 +164,49 @@ curl http://localhost:8000/healthz
 ```
 app/
 ├── Http/
-│   ├── Controllers/        # Тонкие контроллеры (≤ 150 строк)
-│   │   └── Admin/          # Контроллеры админ-панели
-│   ├── Middleware/         # RequireAuth, RequireAdmin
-│   └── Requests/           # Form Request классы
-├── Models/                 # Eloquent модели
-├── Services/               # 🎯 Вся бизнес-логика
-├── Repositories/           # SQL-запросы
-├── Helpers/                # DateHelper, ProgressHelper
-├── Notifications/          # Laravel Notifications
-├── Console/Commands/       # Artisan-команды
-└── Policies/               # Авторизация ресурсов
+│   ├── Controllers/
+│   │   ├── Admin/          # DashboardController, UserController, GoalController,
+│   │   │                   # CategoryController, ArchiveController,
+│   │   │                   # NotificationController, ProfileController
+│   │   ├── Api/            # GoalApiController (demo REST)
+│   │   └── ...             # Auth, Goal, Category, Profile, Subtask, Task
+│   ├── Middleware/         # RequireStaff (staff), ForbidStaffFromUserUi (user.only),
+│   │                       # BlockBannedUsers (not.blocked), RequireAuth
+│   └── Requests/           # Form Request классы (включая Admin/)
+├── Models/                 # User, Goal, Category, Subtask, Task, Achievement
+├── Services/               # Бизнес-логика: AdminStatsService, AdminGoalService,
+│                           # AdminCategoryService, AdminNotificationService,
+│                           # GoalService, UserService, ProfileService и др.
+├── Repositories/           # GoalRepository, CategoryRepository, SubtaskRepository, TaskRepository
+├── Policies/               # GoalPolicy, CategoryPolicy, UserPolicy, SubtaskPolicy, TaskPolicy
+├── Helpers/                # DateHelper (дедлайны), StreakCalculator (серии дней)
+├── Notifications/          # DailyReminder
+├── Console/Commands/       # SendDailyReminders
+└── Support/                # HomePath (редирект после логина)
 
 resources/views/
-├── layouts/                # app, guest
-├── components/             # x-card, x-badge, x-progress-bar...
+├── layouts/                # app, guest, admin
+├── components/             # x-card, x-badge, x-progress-bar, x-flash-message
+│   └── admin/              # sidebar, page-header
 ├── auth/                   # login, register
-├── goals/                  # index, create, edit, show
-├── admin/                  # users/index, dashboard
+├── goals/                  # index, create, edit, show, archive
+├── categories/             # index, create, edit, _form
+├── admin/
+│   ├── dashboard.blade.php
+│   ├── users/              # index, create, edit, show
+│   ├── goals/              # index, show
+│   ├── categories/         # index, create, edit
+│   ├── archive/            # index
+│   ├── notifications/      # index
+│   └── profile/            # edit
+├── achievements/           # index
+├── profile/                # index
+├── emails/                 # daily-reminder (HTML + text)
 └── errors/                 # 404, 403
 
 database/migrations/        # Только append, без редактирования старых
-docs/                       # Логи каждого этапа разработки
+docs/                       # Логи каждого этапа разработки (admin-panel-log.md и др.)
+tests/Feature/              # AuthTest, GoalTest, TaskTest, AdminTest
 ```
 
 ## 🗺️ Дорожная карта (12 этапов)
@@ -204,12 +232,15 @@ docs/                       # Логи каждого этапа разрабо�
 
 - CSRF-токены на всех формах
 - Middleware `auth` на всех защищённых маршрутах
-- Middleware `admin` на `/admin/*`
+- Middleware `staff` на `/admin/*` — пропускает только admin и manager
+- Middleware `user.only` на user UI — staff автоматически перенаправляется в панель
+- Middleware `not.blocked` — заблокированные пользователи теряют сессию на каждом запросе
 - `user_id` **никогда** не принимается из формы — всегда из `auth()->id()`
-- Laravel Policy для проверки владения ресурсами
+- Laravel Policy на каждый ресурс: Goal, Category, User, Subtask, Task
+- Авторизация на сервисном уровне — нельзя вызвать мутирующий метод в обход Policy
 - Bcrypt для паролей (Laravel default)
 - Form Request валидация на всех входящих данных
-- Eloquent ORM — никаких сырых SQL
+- Eloquent ORM — никаких сырых SQL (кроме `DB::table` для notifications, где нет модели)
 
 ## 📡 Demo REST API
 
