@@ -1,38 +1,76 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
-@section('title', 'Админ-панель — ' . config('app.name'))
-
-@php
-    $cards = [
-        ['label' => 'Пользователи',         'value' => $stats['users_total'],         'sub' => $stats['users_admin'].' admin', 'color' => '#4F46E5', 'icon' => '👥'],
-        ['label' => 'Активные за 30 дней',  'value' => $stats['users_active_30d'],    'sub' => $stats['users_new_30d'].' новых', 'color' => '#10B981', 'icon' => '📈'],
-        ['label' => 'Всего целей',           'value' => $stats['goals_total'],         'sub' => $stats['goals_active'].' активных', 'color' => '#0EA5E9', 'icon' => '🎯'],
-        ['label' => 'Задач выполнено',       'value' => $stats['tasks_done'].' / '.$stats['tasks_total'], 'sub' => $stats['tasks_completion_rate'].'%', 'color' => '#F59E0B', 'icon' => '✅'],
-    ];
-@endphp
+@section('title', 'Дашборд — Админ-панель')
+@section('page-title', 'Дашборд')
 
 @section('content')
-    <div class="flex items-center justify-between mb-6">
-        <div>
-            <h1 class="text-2xl font-bold">Админ-панель</h1>
-            <p class="text-sm text-gray-500 mt-1">Системная статистика — только агрегаты, без персональных данных.</p>
-        </div>
+    <x-admin.page-header
+        title="Системная статистика"
+        subtitle="Сводка по пользователям, целям, задачам и уведомлениям." />
 
-        <div class="flex items-center gap-3">
-            <a href="{{ route('dashboard') }}"
-               class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm">
-                ← Мой дашборд
-            </a>
-            <a href="{{ route('admin.users.index') }}"
-               class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm">
-                Пользователи
-            </a>
-        </div>
+    {{-- Группа 1: пользователи --}}
+    <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Пользователи</h3>
+    @php
+        $userCards = [
+            ['label' => 'Всего',              'value' => $stats['users_total'],     'sub' => $stats['users_new_30d'].' новых за 30 дн.', 'color' => '#4F46E5', 'icon' => '👥'],
+            ['label' => 'Активных за 30 дн.', 'value' => $stats['users_active_30d'],'sub' => 'выполняли задачи',                          'color' => '#10B981', 'icon' => '📈'],
+            ['label' => 'Заблокированных',    'value' => $stats['users_blocked'],   'sub' => 'не могут войти',                            'color' => '#EF4444', 'icon' => '🚫'],
+            ['label' => 'Администраторов',    'value' => $stats['users_admin'],     'sub' => $stats['users_manager'].' менеджеров',       'color' => '#8B5CF6', 'icon' => '🛡️'],
+        ];
+    @endphp
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        @foreach ($userCards as $c)
+            <x-card :accent="$c['color']">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <div class="text-xs text-gray-500 uppercase tracking-wide">{{ $c['label'] }}</div>
+                        <div class="mt-1 text-2xl font-bold" style="color: {{ $c['color'] }}">{{ $c['value'] }}</div>
+                        <div class="text-xs text-gray-500 mt-0.5">{{ $c['sub'] }}</div>
+                    </div>
+                    <div class="text-2xl opacity-80">{{ $c['icon'] }}</div>
+                </div>
+            </x-card>
+        @endforeach
     </div>
 
-    {{-- KPI-карточки --}}
+    {{-- Группа 2: цели --}}
+    <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Цели</h3>
+    @php
+        $goalCards = [
+            ['label' => 'Всего',         'value' => $stats['goals_total'],     'sub' => 'в системе',                  'color' => '#0EA5E9', 'icon' => '🎯'],
+            ['label' => 'Активных',      'value' => $stats['goals_active'],    'sub' => 'в работе',                   'color' => '#4F46E5', 'icon' => '🚀'],
+            ['label' => 'Завершённых',   'value' => $stats['goals_completed'], 'sub' => 'успешно достигнуто',         'color' => '#10B981', 'icon' => '✅'],
+            ['label' => 'В архиве',      'value' => $stats['goals_archived'],  'sub' => 'отложено',                   'color' => '#64748B', 'icon' => '🗄️'],
+            ['label' => 'Просроченных',  'value' => $stats['goals_overdue'],   'sub' => 'дедлайн в прошлом',          'color' => '#EF4444', 'icon' => '⏰'],
+        ];
+    @endphp
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+        @foreach ($goalCards as $c)
+            <x-card :accent="$c['color']">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <div class="text-xs text-gray-500 uppercase tracking-wide">{{ $c['label'] }}</div>
+                        <div class="mt-1 text-2xl font-bold" style="color: {{ $c['color'] }}">{{ $c['value'] }}</div>
+                        <div class="text-xs text-gray-500 mt-0.5">{{ $c['sub'] }}</div>
+                    </div>
+                    <div class="text-2xl opacity-80">{{ $c['icon'] }}</div>
+                </div>
+            </x-card>
+        @endforeach
+    </div>
+
+    {{-- Группа 3: задачи + уведомления --}}
+    <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Задачи и уведомления</h3>
+    @php
+        $mixCards = [
+            ['label' => 'Задач выполнено',  'value' => $stats['tasks_done'].' / '.$stats['tasks_total'], 'sub' => $stats['tasks_completion_rate'].'% от всех', 'color' => '#10B981', 'icon' => '☑️'],
+            ['label' => 'Задач сегодня',    'value' => $stats['tasks_done_today'],                       'sub' => 'выполнено',                                'color' => '#4F46E5', 'icon' => '🌞'],
+            ['label' => 'Задач за неделю',  'value' => $stats['tasks_done_week'],                        'sub' => 'выполнено',                                'color' => '#0EA5E9', 'icon' => '📅'],
+            ['label' => 'Уведомлений 30дн', 'value' => $stats['notifications_sent_30d'],                 'sub' => $stats['notifications_unread'].' непрочитанных', 'color' => '#F59E0B', 'icon' => '🔔'],
+        ];
+    @endphp
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        @foreach ($cards as $c)
+        @foreach ($mixCards as $c)
             <x-card :accent="$c['color']">
                 <div class="flex items-start justify-between">
                     <div>
@@ -48,7 +86,7 @@
 
     {{-- Распределение целей по статусам --}}
     <x-card class="mb-6">
-        <x-section-header title="Распределение целей" />
+        <x-section-header title="Распределение целей по статусам" />
         @if ($stats['goals_total'] === 0)
             <p class="text-sm text-gray-500">В системе пока нет целей.</p>
         @else
@@ -79,129 +117,109 @@
         @endif
     </x-card>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {{-- Регистрации за 30 дней --}}
-        <x-card class="lg:col-span-2">
+    {{-- Два графика рядом --}}
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <x-card>
             <x-section-header title="Регистрации за 30 дней" />
             @if (collect($stats['registrations_30d'])->sum('count') === 0)
                 <p class="text-sm text-gray-500 py-8 text-center">
                     Новых регистраций за последние 30 дней нет.
                 </p>
             @else
-                <div class="relative h-64">
+                <div class="relative h-56">
                     <canvas id="registrationsChart"></canvas>
                 </div>
-
-                @php
-                    $regDays = collect($stats['registrations_30d'])
-                        ->where('count', '>', 0)
-                        ->sortByDesc('date')
-                        ->values();
-                @endphp
-                @if ($regDays->isNotEmpty())
-                    <div class="mt-4 pt-4 border-t border-gray-100">
-                        <h3 class="text-sm font-semibold text-gray-700 mb-2">Расшифровка по дням</h3>
-                        <table class="w-full text-sm border-collapse">
-                            <thead>
-                                <tr class="bg-gray-50">
-                                    <th class="border border-gray-200 px-3 py-1.5 text-left font-semibold text-gray-700">Дата</th>
-                                    <th class="border border-gray-200 px-3 py-1.5 text-right font-semibold text-gray-700">Зарегистрировано</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($regDays as $row)
-                                    <tr>
-                                        <td class="border border-gray-200 px-3 py-1.5 text-gray-700">
-                                            {{ \Illuminate\Support\Carbon::parse($row['date'])->format('d.m.Y') }}
-                                        </td>
-                                        <td class="border border-gray-200 px-3 py-1.5 text-right font-medium text-gray-900">
-                                            {{ $row['count'] }}
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                @endif
             @endif
         </x-card>
 
-        {{-- Топ категорий --}}
         <x-card>
-            <x-section-header title="Популярные категории" />
-
-            @if (empty($stats['top_categories']) || collect($stats['top_categories'])->sum('goals_count') === 0)
-                <p class="text-sm text-gray-500 py-4">
-                    Пока нет данных по категориям.
+            <x-section-header title="Активность (задачи) за 30 дней" />
+            @if (collect($stats['activity_30d'])->sum('count') === 0)
+                <p class="text-sm text-gray-500 py-8 text-center">
+                    Задач за последние 30 дней не выполнено.
                 </p>
             @else
-                <ul class="space-y-2">
-                    @foreach ($stats['top_categories'] as $cat)
-                        <li class="flex items-center justify-between py-1.5 px-2 rounded">
-                            <div class="flex items-center gap-2 min-w-0">
-                                <span class="inline-block w-3 h-3 rounded-full flex-shrink-0"
-                                      style="background-color: {{ $cat['color'] }}"></span>
-                                <span class="text-sm text-gray-800 truncate">{{ $cat['label'] }}</span>
-                                @if ($cat['is_system'])
-                                    <span class="text-xs text-gray-400">сист.</span>
-                                @endif
-                            </div>
-                            <span class="text-sm font-semibold text-gray-700 ml-2">{{ $cat['goals_count'] }}</span>
-                        </li>
-                    @endforeach
-                </ul>
+                <div class="relative h-56">
+                    <canvas id="activityChart"></canvas>
+                </div>
             @endif
         </x-card>
     </div>
+
+    {{-- Топ категорий --}}
+    <x-card>
+        <x-section-header title="Популярные категории" />
+
+        @if (empty($stats['top_categories']) || collect($stats['top_categories'])->sum('goals_count') === 0)
+            <p class="text-sm text-gray-500 py-4">
+                Пока нет данных по категориям.
+            </p>
+        @else
+            <ul class="space-y-2">
+                @foreach ($stats['top_categories'] as $cat)
+                    <li class="flex items-center justify-between py-1.5 px-2 rounded">
+                        <div class="flex items-center gap-2 min-w-0">
+                            <span class="inline-block w-3 h-3 rounded-full flex-shrink-0"
+                                  style="background-color: {{ $cat['color'] }}"></span>
+                            <span class="text-sm text-gray-800 truncate">{{ $cat['label'] }}</span>
+                            @if ($cat['is_system'])
+                                <span class="text-xs text-gray-400">сист.</span>
+                            @endif
+                        </div>
+                        <span class="text-sm font-semibold text-gray-700 ml-2">{{ $cat['goals_count'] }}</span>
+                    </li>
+                @endforeach
+            </ul>
+        @endif
+    </x-card>
 @endsection
 
-@if (collect($stats['registrations_30d'])->sum('count') > 0)
 @push('scripts')
 <script>
-(function() {
-    const data = @json($stats['registrations_30d']);
-    const ctx = document.getElementById('registrationsChart');
-    if (!ctx) return;
+(function () {
+    // Общий рендерер столбчатого графика — две метрики одинаковые по форме.
+    function renderBar(canvasId, data, color) {
+        const ctx = document.getElementById(canvasId);
+        if (!ctx) return;
 
-    const labels = data.map(d => {
-        const [, m, day] = d.date.split('-');
-        return `${day}.${m}`;
-    });
-    const counts = data.map(d => d.count);
+        const labels = data.map(d => {
+            const [, m, day] = d.date.split('-');
+            return `${day}.${m}`;
+        });
+        const counts = data.map(d => d.count);
 
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels,
-            datasets: [{
-                label: 'Регистрации',
-                data: counts,
-                backgroundColor: counts.map(c => c > 0 ? '#10B981' : '#E5E7EB'),
-                borderRadius: 4,
-                maxBarThickness: 24,
-            }],
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: { callbacks: { label: ctx => `${ctx.parsed.y} новых` } },
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [{
+                    data: counts,
+                    backgroundColor: counts.map(c => c > 0 ? color : '#E5E7EB'),
+                    borderRadius: 4,
+                    maxBarThickness: 18,
+                }],
             },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: { stepSize: 1, precision: 0 },
-                    grid: { color: '#F3F4F6' },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: ctx => `${ctx.parsed.y}` } },
                 },
-                x: {
-                    ticks: { autoSkip: true, maxRotation: 0 },
-                    grid: { display: false },
+                scales: {
+                    y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, grid: { color: '#F3F4F6' } },
+                    x: { ticks: { autoSkip: true, maxRotation: 0 }, grid: { display: false } },
                 },
             },
-        },
-    });
+        });
+    }
+
+    @if (collect($stats['registrations_30d'])->sum('count') > 0)
+        renderBar('registrationsChart', @json($stats['registrations_30d']), '#10B981');
+    @endif
+    @if (collect($stats['activity_30d'])->sum('count') > 0)
+        renderBar('activityChart', @json($stats['activity_30d']), '#4F46E5');
+    @endif
 })();
 </script>
 @endpush
-@endif

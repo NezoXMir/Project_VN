@@ -14,6 +14,35 @@
 
     <x-flash-message type="success" />
 
+    {{-- Статус подтверждения email --}}
+    <x-card padding="p-5" class="mb-6">
+        <x-section-header title="Подтверждение email" />
+
+        @if ($user->isEmailVerified())
+            <div class="flex items-center gap-3 bg-green-50 border border-green-200 rounded-lg px-4 py-3">
+                <span class="text-green-600 text-lg font-bold">✓</span>
+                <div>
+                    <div class="text-sm font-medium text-green-800">Email подтверждён</div>
+                    <div class="text-xs text-green-600">{{ $user->email_verified_at->format('d.m.Y') }}</div>
+                </div>
+            </div>
+        @else
+            <div class="flex items-center justify-between gap-4 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+                <div>
+                    <div class="text-sm font-medium text-amber-800">Email не подтверждён</div>
+                    <div class="text-xs text-amber-600 mt-0.5">Подтвердите почту для полного доступа к возможностям платформы</div>
+                </div>
+                <form method="POST" action="{{ route('email.verification.resend') }}" class="shrink-0">
+                    @csrf
+                    <button type="submit"
+                            class="bg-amber-500 hover:bg-amber-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition whitespace-nowrap">
+                        Подтвердить email
+                    </button>
+                </form>
+            </div>
+        @endif
+    </x-card>
+
     {{-- Профиль: аватар, имя, email, bio --}}
     <x-card padding="p-6" class="mb-6">
         <x-section-header title="Основные данные" />
@@ -34,7 +63,7 @@
                 </div>
             @endif
 
-            <div class="flex items-center gap-4" x-data="{
+            <div class="flex flex-col sm:flex-row gap-4" x-data="{
                 preview: '{{ $user->avatarUrl() }}',
                 onPick(e) {
                     const f = e.target.files?.[0];
@@ -107,7 +136,7 @@
     <x-card padding="p-6" class="mb-6">
         <x-section-header title="Смена пароля" />
 
-        <form method="POST" action="{{ route('profile.password') }}" class="space-y-4 max-w-md">
+        <form method="POST" action="{{ route('profile.password') }}" class="space-y-4">
             @csrf
             @method('PATCH')
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\PasswordChangeRequest;
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Services\EmailVerificationService;
 use App\Services\ProfileService;
 use DomainException;
 use Illuminate\Http\RedirectResponse;
@@ -13,9 +14,10 @@ use Illuminate\View\View;
 
 class ProfileController extends Controller
 {
-    public function __construct(private readonly ProfileService $profile)
-    {
-    }
+    public function __construct(
+        private readonly ProfileService           $profile,
+        private readonly EmailVerificationService $emailVerification,
+    ) {}
 
     public function index(): View
     {
@@ -26,11 +28,21 @@ class ProfileController extends Controller
 
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
+        $user         = Auth::user();
+        $emailChanged = $request->safe()->email !== $user->email;
+
         $this->profile->updateProfile(
-            Auth::user(),
+            $user,
             $request->safe()->only(['name', 'email', 'bio', 'email_reminders_enabled']),
             $request->file('avatar'),
         );
+
+        if ($emailChanged) {
+            $this->emailVerification->sendVerificationEmail($user->fresh());
+
+            return redirect()->route('email.verify.notice')
+                ->with('success', 'Email изменён. Подтвердите новый адрес.');
+        }
 
         return redirect()->route('profile.index')->with('success', 'Профиль обновлён.');
     }

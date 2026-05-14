@@ -7,16 +7,20 @@ $byCategory = $goals->groupBy('category_id');
 @endphp
 
 @section('content')
-<div class="flex items-center justify-between mb-6">
+<div class="flex flex-wrap items-start justify-between gap-3 mb-6">
     <div>
         <h1 class="text-2xl font-bold">Мои цели</h1>
         <p class="text-sm text-gray-500 mt-1">Всего: {{ $goals->count() }}</p>
     </div>
 
-    <div class="flex items-center gap-3">
+    <div class="flex flex-wrap items-center gap-2">
         <a href="{{ route('dashboard') }}"
             class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm">
             ← Дашборд
+        </a>
+        <a href="{{ route('goals.archive') }}"
+            class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm">
+            Архив
         </a>
         <a href="{{ route('categories.index') }}"
             class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm">

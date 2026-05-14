@@ -36,4 +36,44 @@ class GoalPolicy
     {
         return $this->update($user, $goal);
     }
+
+    /**
+     * Пользователь может восстановить только свою архивную цель.
+     */
+    public function restore(User $user, Goal $goal): bool
+    {
+        return $user->id === $goal->user_id;
+    }
+
+    /* ------------------------- staff-уровень ----------------------------- */
+    /*
+     * Эти ability нужны только админ-разделу. Они нарочно отделены от
+     * owner-методов выше, чтобы изменения политики staff не задевали
+     * пользовательские проверки. В Blade использовать как
+     * @can('staffArchive', $goal).
+     */
+
+    public function staffView(User $user, Goal $goal): bool
+    {
+        return $user->isStaff();
+    }
+
+    public function staffArchive(User $user, Goal $goal): bool
+    {
+        return $user->isStaff();
+    }
+
+    public function staffRestore(User $user, Goal $goal): bool
+    {
+        return $user->isStaff();
+    }
+
+    /**
+     * Жёсткое удаление чужой цели — только для админа. Менеджер
+     * максимум может архивировать.
+     */
+    public function staffDelete(User $user, Goal $goal): bool
+    {
+        return $user->isAdmin();
+    }
 }

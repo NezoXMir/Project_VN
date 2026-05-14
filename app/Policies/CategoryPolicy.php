@@ -37,4 +37,21 @@ class CategoryPolicy
     {
         return $this->update($user, $category);
     }
+
+    /* ------------------------- staff-уровень ----------------------------- */
+
+    public function staffCreate(User $user): bool
+    {
+        return $user->isAdmin();
+    }
+
+    public function staffUpdate(User $user, Category $category): bool
+    {
+        return $user->isAdmin();
+    }
+
+    public function staffDelete(User $user, Category $category): bool
+    {
+        return $user->isAdmin();
+    }
 }

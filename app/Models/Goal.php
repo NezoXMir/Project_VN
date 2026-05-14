@@ -24,13 +24,25 @@ class Goal extends Model
         'description',
         'status',
         'deadline',
+        'archived_at',
     ];
 
     protected function casts(): array
     {
         return [
             'deadline' => 'date',
+            'archived_at' => 'datetime',
         ];
+    }
+
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->whereIn('status', [self::STATUS_ACTIVE, self::STATUS_COMPLETED]);
+    }
+
+    public function scopeArchived(Builder $query): Builder
+    {
+        return $query->where('status', self::STATUS_ARCHIVED);
     }
 
     public function user(): BelongsTo

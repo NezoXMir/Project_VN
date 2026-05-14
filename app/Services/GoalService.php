@@ -49,6 +49,7 @@ class GoalService
     {
         $goal = $this->findAuthorized($goalId, $user, 'archive');
         $goal->status = Goal::STATUS_ARCHIVED;
+        $goal->archived_at = now();
 
         return $this->repo->save($goal);
     }
@@ -57,6 +58,20 @@ class GoalService
     {
         $goal = $this->findAuthorized($goalId, $user, 'complete');
         $goal->status = Goal::STATUS_COMPLETED;
+
+        return $this->repo->save($goal);
+    }
+
+    /**
+     * Восстановление цели из архива. archived_at очищается,
+     * статус возвращается в active — UI/админка трактуют это
+     * как «свежая активная цель».
+     */
+    public function restore(int $goalId, User $user): Goal
+    {
+        $goal = $this->findAuthorized($goalId, $user, 'restore');
+        $goal->status = Goal::STATUS_ACTIVE;
+        $goal->archived_at = null;
 
         return $this->repo->save($goal);
     }

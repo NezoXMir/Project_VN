@@ -14,7 +14,16 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'auth' => \App\Http\Middleware\RequireAuth::class,
             'admin' => \App\Http\Middleware\RequireAdmin::class,
+            'staff' => \App\Http\Middleware\RequireStaff::class,
+            'user.only' => \App\Http\Middleware\ForbidStaffFromUserUi::class,
+            'not.blocked' => \App\Http\Middleware\BlockBannedUsers::class,
         ]);
+
+        // На каждый авторизованный запрос проверяем, не заблокирован ли юзер.
+        // Если в БД проставили blocked_at — следующий же его запрос выкинет
+        // на /login. Это страховка на случай, если админ блокирует уже
+        // залогиненного пользователя.
+        $middleware->appendToGroup('web', \App\Http\Middleware\BlockBannedUsers::class);
 
         // API-эндпоинты используют session-cookie auth, но не нуждаются
         // в CSRF: HTML-форм у них нет, доступ только из same-origin

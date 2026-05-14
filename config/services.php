@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'yandex_captcha' => [
+        'sitekey' => env('YANDEX_CAPTCHA_SITEKEY'),
+        'secret'  => env('YANDEX_CAPTCHA_SECRET'),
+    ],
+
 ];
