@@ -11,7 +11,7 @@
                 <form method="POST" action="{{ route('admin.notifications.purge') }}"
                       x-data="{ days: 30 }"
                       onsubmit="return confirm('Удалить прочитанные уведомления старше ' + document.getElementById('purge-days').value + ' дней?')"
-                      class="flex items-center gap-2">
+                      class="flex flex-wrap items-center gap-2">
                     @csrf
                     <input id="purge-days" name="days" type="number" min="1" max="365"
                            x-model="days"
@@ -78,6 +78,7 @@
     </x-card>
 
     <x-card padding="p-0" class="overflow-hidden">
+        <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-100 text-sm">
             <thead class="bg-gray-50 text-gray-600 uppercase text-xs">
                 <tr>
@@ -157,6 +158,7 @@
                 @endforelse
             </tbody>
         </table>
+        </div>
     </x-card>
 
     @if ($notifications->hasPages())

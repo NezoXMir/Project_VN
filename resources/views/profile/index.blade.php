@@ -63,7 +63,7 @@
                 </div>
             @endif
 
-            <div class="flex items-center gap-4" x-data="{
+            <div class="flex flex-col sm:flex-row gap-4" x-data="{
                 preview: '{{ $user->avatarUrl() }}',
                 onPick(e) {
                     const f = e.target.files?.[0];
@@ -136,7 +136,7 @@
     <x-card padding="p-6" class="mb-6">
         <x-section-header title="Смена пароля" />
 
-        <form method="POST" action="{{ route('profile.password') }}" class="space-y-4 max-w-md">
+        <form method="POST" action="{{ route('profile.password') }}" class="space-y-4">
             @csrf
             @method('PATCH')
 

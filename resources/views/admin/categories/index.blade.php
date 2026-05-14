@@ -48,6 +48,7 @@
     </x-card>
 
     <x-card padding="p-0" class="overflow-hidden">
+        <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-100 text-sm">
             <thead class="bg-gray-50 text-gray-600 uppercase text-xs">
                 <tr>
@@ -128,6 +129,7 @@
                 @endforelse
             </tbody>
         </table>
+        </div>
     </x-card>
 
     @if ($categories->hasPages())

@@ -38,7 +38,7 @@
                placeholder="000000"
                autofocus
                value="{{ old('code') }}"
-               class="w-full text-center text-3xl font-bold tracking-[0.4em] rounded-lg border-gray-300
+               class="w-full text-center text-2xl sm:text-3xl font-bold tracking-[0.25em] sm:tracking-[0.4em] rounded-lg border-gray-300
                       focus:border-indigo-500 focus:ring-indigo-500 px-3 py-3 border mb-3">
         <button type="submit"
                 class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2.5 rounded-lg transition">
