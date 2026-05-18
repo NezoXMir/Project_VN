@@ -284,4 +284,36 @@ html.dark .text-blue-700     { color: #60a5fa !important; }
 /* Небесно-голубой бейдж. */
 html.dark .bg-sky-100        { background-color: rgba(14,165,233,.18) !important; }
 html.dark .text-sky-700      { color: #38bdf8 !important; }
+
+
+/* ════════════════════════════════════════════════════════════════
+   HOVER-ЦВЕТА ТЕКСТА
+   ────────────────────────────────────────────────────────────────
+   Tailwind генерирует hover:text-* как отдельный класс (.hover\:text-…:hover),
+   который не попадает под правила .text-… выше. Поэтому hover-состояния
+   нужно переопределять явно, иначе текст уходит в тёмный Tailwind-дефолт
+   и становится нечитаемым на тёмном фоне.
+
+   Эти правила исправляют hover-поведение в навигации, кнопках и ссылках.
+   Измените цвет здесь, если хотите другой оттенок при наведении.
+   ════════════════════════════════════════════════════════════════ */
+
+/* Основной hover-текст — ссылки навигации, иконки-кнопки. */
+html.dark .hover\:text-gray-900:hover { color: #f1f5f9 !important; }
+html.dark .hover\:text-gray-700:hover { color: #cbd5e1 !important; }
+
+/* Акцентный hover-текст — активные ссылки, ссылки-действия. */
+html.dark .hover\:text-indigo-700:hover { color: #818cf8 !important; }
+html.dark .hover\:text-indigo-600:hover { color: #818cf8 !important; }
+
+/* Опасный hover-текст — кнопка выхода, действия удаления. */
+html.dark .hover\:text-red-600:hover   { color: #fc9090 !important; }
+
+/* Hover active bg для red (кнопка выхода). */
+html.dark .hover\:bg-red-50:hover  { background-color: rgba(239,68,68,.12) !important; }
+html.dark .active\:bg-red-100:active { background-color: rgba(239,68,68,.20) !important; }
+
+/* Hover active bg для indigo (ссылка на адм. панель). */
+html.dark .hover\:bg-indigo-50:hover  { background-color: rgba(99,102,241,.12) !important; }
+html.dark .active\:bg-indigo-100:active { background-color: rgba(99,102,241,.20) !important; }
 </style>

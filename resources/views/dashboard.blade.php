@@ -267,108 +267,181 @@ $cards = [
 {{-- ============================================================
      ДЕСКТОПНАЯ НАВИГАЦИЯ — скрыта на mobile (sm:)
      ============================================================ --}}
-<div class="hidden sm:flex items-center justify-between gap-3 mb-6">
-    <h1 class="text-2xl font-bold">Здравствуйте, {{ auth()->user()->name }}!</h1>
+<div class="hidden sm:block mb-6">
 
-    <div class="flex flex-wrap items-center gap-2">
-        <a href="{{ route('goals.index') }}"
-            class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm">
-            Мои цели
+    {{-- Навигационная панель --}}
+    <nav class="bg-white rounded-2xl shadow-sm border border-gray-100 px-3 py-2 flex items-center gap-2"
+         aria-label="Основная навигация">
+
+        {{-- Логотип + название --}}
+        <a href="{{ route('dashboard') }}"
+           class="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-gray-50 transition flex-shrink-0"
+           aria-label="На главную">
+            <span class="text-xl leading-none" aria-hidden="true">🎯</span>
+            <span class="font-bold text-gray-900 tracking-tight text-sm hidden lg:block whitespace-nowrap">
+                {{ config('app.name') }}
+            </span>
         </a>
 
-        <a href="{{ route('categories.index') }}"
-            class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm">
-            Категории
-        </a>
+        {{-- Разделитель --}}
+        <div class="w-px h-5 bg-gray-200 flex-shrink-0 mx-0.5"></div>
 
-        <a href="{{ route('achievements.index') }}"
-            class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm">
-            Достижения
-        </a>
+        {{-- Навигационные ссылки с иконками --}}
+        @php $r = request()->route()?->getName() ?? ''; @endphp
+        <div class="flex items-center gap-0.5 flex-1">
 
-        {{-- Переключатель темы --}}
-        @include('partials.theme-switcher', [
-            'btnClass'      => 'relative bg-gray-100 hover:bg-gray-200 text-gray-700 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition',
-            'iconSize'      => 'w-5 h-5',
-            'dropdownClass' => 'absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-40',
-        ])
+            {{-- Дашборд --}}
+            <a href="{{ route('dashboard') }}"
+               class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition whitespace-nowrap
+                      {{ $r === 'dashboard' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}">
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                </svg>
+                Дашборд
+            </a>
 
-        {{-- Bell-иконка с уведомлениями --}}
-        <div x-data="notificationsBell({{ $unreadNotifications->count() }}, {{ $unreadNotifications->toJson() }})"
-             @click.outside="open = false"
-             class="relative">
-            <button @click="open = !open" type="button"
-                    class="relative bg-gray-100 hover:bg-gray-200 text-gray-700 p-2 rounded-lg"
-                    title="Уведомления">
-                🔔
-                <span x-show="count > 0"
-                      x-text="count"
-                      class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1"></span>
-            </button>
+            {{-- Мои цели --}}
+            <a href="{{ route('goals.index') }}"
+               class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition whitespace-nowrap
+                      {{ str_starts_with($r, 'goals') ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}">
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                </svg>
+                Мои цели
+            </a>
 
-            <div x-show="open"
-                 x-transition.opacity
-                 x-cloak
-                 class="absolute right-0 mt-2 w-80 max-w-[calc(100vw-1rem)] bg-white rounded-xl shadow-lg border border-gray-100 z-40">
-                <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-                    <h3 class="font-semibold text-sm">Уведомления</h3>
-                    <button x-show="items.length > 0"
-                            @click="markAllRead()"
-                            type="button"
-                            class="text-xs text-indigo-600 hover:text-indigo-700">
-                        Прочитать все
-                    </button>
-                </div>
+            {{-- Категории --}}
+            <a href="{{ route('categories.index') }}"
+               class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition whitespace-nowrap
+                      {{ str_starts_with($r, 'categories') ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}">
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-5 5a2 2 0 01-2.828 0l-7-7A2 2 0 013 10V5a2 2 0 012-2z"/>
+                </svg>
+                Категории
+            </a>
 
-                <template x-if="items.length === 0">
-                    <div class="px-4 py-6 text-sm text-gray-500 text-center">
-                        Новых уведомлений нет.
-                    </div>
-                </template>
-
-                <template x-if="items.length > 0">
-                    <ul class="max-h-80 overflow-y-auto divide-y divide-gray-50">
-                        <template x-for="n in items" :key="n.id">
-                            <li class="px-4 py-3 hover:bg-gray-50">
-                                <div class="flex items-start justify-between gap-2">
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-sm text-gray-800" x-text="summarize(n.data)"></p>
-                                        <p class="text-xs text-gray-400 mt-0.5" x-text="formatDate(n.created_at)"></p>
-                                    </div>
-                                    <button @click="markRead(n.id)" type="button"
-                                            class="text-xs text-gray-400 hover:text-gray-600">×</button>
-                                </div>
-                            </li>
-                        </template>
-                    </ul>
-                </template>
-            </div>
+            {{-- Достижения --}}
+            <a href="{{ route('achievements.index') }}"
+               class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition whitespace-nowrap
+                      {{ $r === 'achievements.index' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}">
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                </svg>
+                Достижения
+            </a>
         </div>
 
-        @if (auth()->user()->isAdmin())
-        <a href="{{ route('admin.dashboard') }}"
-            class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm">
-            Админ-панель
-        </a>
-        @endif
+        {{-- Правые элементы управления --}}
+        <div class="flex items-center gap-0.5 flex-shrink-0">
 
-        <form method="POST" action="{{ route('logout') }}">
-            @csrf
-            <button type="submit"
-                class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm">
-                Выйти
-            </button>
-        </form>
-        <a href="{{ route('profile.index') }}"
-            class="w-9 h-9 rounded-full overflow-hidden bg-indigo-100 hover:ring-2 hover:ring-indigo-300 flex items-center justify-center transition"
-            title="Профиль">
-            @if (auth()->user()->avatarUrl())
-            <img src="{{ auth()->user()->avatarUrl() }}" alt="Аватар" class="w-full h-full object-cover">
-            @else
-            <span class="text-sm font-semibold text-indigo-700">{{ auth()->user()->initial() }}</span>
+            {{-- Переключатель темы --}}
+            @include('partials.theme-switcher', [
+                'btnClass'      => 'p-2 rounded-xl text-gray-500 hover:text-gray-900 hover:bg-gray-100 active:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition',
+                'iconSize'      => 'w-5 h-5',
+                'dropdownClass' => 'absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-40',
+            ])
+
+            {{-- Колокол уведомлений --}}
+            <div x-data="notificationsBell({{ $unreadNotifications->count() }}, {{ $unreadNotifications->toJson() }})"
+                 @click.outside="open = false"
+                 class="relative">
+                <button @click="open = !open" type="button"
+                        aria-label="Уведомления"
+                        :aria-expanded="open"
+                        class="relative p-2 rounded-xl text-gray-500 hover:text-gray-900 hover:bg-gray-100
+                               active:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                    </svg>
+                    <span x-show="count > 0" x-text="count"
+                          class="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full
+                                 min-w-[16px] h-[16px] flex items-center justify-center px-0.5 leading-none"></span>
+                </button>
+
+                <div x-show="open" x-transition.opacity x-cloak
+                     class="absolute right-0 mt-2 w-80 max-w-[calc(100vw-1rem)] bg-white rounded-xl
+                            shadow-lg border border-gray-100 z-40">
+                    <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                        <h3 class="font-semibold text-sm">Уведомления</h3>
+                        <button x-show="items.length > 0" @click="markAllRead()" type="button"
+                                class="text-xs text-indigo-600 hover:text-indigo-700">Прочитать все</button>
+                    </div>
+                    <template x-if="items.length === 0">
+                        <div class="px-4 py-6 text-sm text-gray-500 text-center">Новых уведомлений нет.</div>
+                    </template>
+                    <template x-if="items.length > 0">
+                        <ul class="max-h-80 overflow-y-auto divide-y divide-gray-50">
+                            <template x-for="n in items" :key="n.id">
+                                <li class="px-4 py-3 hover:bg-gray-50">
+                                    <div class="flex items-start justify-between gap-2">
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-sm text-gray-800" x-text="summarize(n.data)"></p>
+                                            <p class="text-xs text-gray-400 mt-0.5" x-text="formatDate(n.created_at)"></p>
+                                        </div>
+                                        <button @click="markRead(n.id)" type="button"
+                                                class="text-xs text-gray-400 hover:text-gray-600 flex-shrink-0">×</button>
+                                    </div>
+                                </li>
+                            </template>
+                        </ul>
+                    </template>
+                </div>
+            </div>
+
+            {{-- Разделитель --}}
+            <div class="w-px h-5 bg-gray-200 flex-shrink-0 mx-0.5"></div>
+
+            {{-- Ссылка на админ-панель --}}
+            @if (auth()->user()->isStaff())
+            <a href="{{ route('admin.dashboard') }}"
+               title="Админ-панель"
+               aria-label="Перейти в админ-панель"
+               class="p-2 rounded-xl text-gray-500 hover:text-indigo-600 hover:bg-indigo-50
+                      active:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                </svg>
+            </a>
             @endif
-        </a>
-    </div>
+
+            {{-- Аватар / профиль --}}
+            <a href="{{ route('profile.index') }}"
+               aria-label="Профиль"
+               title="{{ auth()->user()->name }}"
+               class="w-8 h-8 rounded-full overflow-hidden bg-indigo-100 flex items-center justify-center
+                      hover:ring-2 hover:ring-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition flex-shrink-0">
+                @if (auth()->user()->avatarUrl())
+                    <img src="{{ auth()->user()->avatarUrl() }}" alt="Аватар" class="w-full h-full object-cover">
+                @else
+                    <span class="text-xs font-semibold text-indigo-700">{{ auth()->user()->initial() }}</span>
+                @endif
+            </a>
+
+            {{-- Выход --}}
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button type="submit"
+                        aria-label="Выйти из аккаунта"
+                        title="Выйти"
+                        class="p-2 rounded-xl text-gray-500 hover:text-red-600 hover:bg-red-50
+                               active:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-400 transition">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                </button>
+            </form>
+        </div>
+    </nav>
+
+    {{-- Приветствие --}}
+    <h1 class="text-2xl font-bold text-gray-900 mt-5">Здравствуйте, {{ auth()->user()->name }}!</h1>
 </div>
 
 <x-flash-message type="success" />
