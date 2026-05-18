@@ -6,8 +6,12 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', config('app.name'))</title>
 
+    @include('partials.theme-init')
+
     {{-- Tailwind CSS (CDN) --}}
     <script src="https://cdn.tailwindcss.com"></script>
+
+    @include('partials.dark-mode-styles')
 
     {{-- Alpine.js (defer обязателен) --}}
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>

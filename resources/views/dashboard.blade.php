@@ -5,6 +5,9 @@
 @push('head')
 <style>
     [x-cloak] { display: none !important; }
+    /* The layout's floating theme button is redundant on dashboard
+       which embeds the switcher directly in both navbars. */
+    #theme-float { display: none !important; }
 </style>
 @endpush
 
@@ -45,8 +48,15 @@ $cards = [
         {{-- Название приложения --}}
         <span class="font-semibold text-gray-900 text-sm tracking-tight">{{ config('app.name') }}</span>
 
-        {{-- Правая группа: колокол + аватар + выход --}}
+        {{-- Правая группа: тема + колокол + аватар + выход --}}
         <div class="flex items-center gap-0.5">
+
+            {{-- Переключатель темы --}}
+            @include('partials.theme-switcher', [
+                'btnClass'      => 'p-2 rounded-xl text-gray-600 hover:text-gray-900 hover:bg-gray-100 active:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition',
+                'iconSize'      => 'w-5 h-5',
+                'dropdownClass' => 'absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50',
+            ])
 
             {{-- Колокол уведомлений --}}
             <div x-data="notificationsBell({{ $unreadNotifications->count() }}, {{ $unreadNotifications->toJson() }})"
@@ -275,6 +285,13 @@ $cards = [
             class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm">
             Достижения
         </a>
+
+        {{-- Переключатель темы --}}
+        @include('partials.theme-switcher', [
+            'btnClass'      => 'relative bg-gray-100 hover:bg-gray-200 text-gray-700 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition',
+            'iconSize'      => 'w-5 h-5',
+            'dropdownClass' => 'absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-40',
+        ])
 
         {{-- Bell-иконка с уведомлениями --}}
         <div x-data="notificationsBell({{ $unreadNotifications->count() }}, {{ $unreadNotifications->toJson() }})"

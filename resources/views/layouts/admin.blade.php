@@ -6,7 +6,12 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Админ-панель — ' . config('app.name'))</title>
 
+    @include('partials.theme-init')
+
     <script src="https://cdn.tailwindcss.com"></script>
+
+    @include('partials.dark-mode-styles')
+
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
@@ -54,7 +59,7 @@
         </aside>
     </div>
 
-    {{-- Main column — min-w-0 prevents flex child from expanding beyond viewport --}}
+    {{-- Main column --}}
     <div class="flex-1 md:ml-64 flex flex-col min-w-0">
 
         {{-- Top bar --}}
@@ -83,6 +88,13 @@
 
                 @auth
                     <div class="flex items-center gap-2 flex-shrink-0">
+                        {{-- Theme switcher --}}
+                        @include('partials.theme-switcher', [
+                            'btnClass'      => 'p-2 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 active:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition',
+                            'iconSize'      => 'w-5 h-5',
+                            'dropdownClass' => 'absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50',
+                        ])
+
                         <div class="text-right hidden sm:block">
                             <div class="text-sm font-medium text-gray-800 truncate max-w-[140px]">{{ auth()->user()->name }}</div>
                             <div class="text-xs text-gray-500">{{ auth()->user()->roleLabel() }}</div>
@@ -135,6 +147,40 @@ function adminLayout() {
             this.sidebarOpen = false;
             document.body.style.overflow = '';
             this.$nextTick(() => this.$refs.menuBtn?.focus());
+        },
+    };
+}
+
+function themeSwitcher() {
+    return {
+        theme: localStorage.getItem('theme') || 'system',
+        open: false,
+
+        get currentIcon() {
+            if (this.theme === 'dark')  return 'moon';
+            if (this.theme === 'light') return 'sun';
+            return 'system';
+        },
+
+        setTheme(t) {
+            this.theme = t;
+            localStorage.setItem('theme', t);
+            const dark = t === 'dark' ||
+                (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            document.documentElement.classList.add('theme-transitioning');
+            document.documentElement.classList.toggle('dark', dark);
+            setTimeout(() => document.documentElement.classList.remove('theme-transitioning'), 300);
+            this.open = false;
+        },
+
+        init() {
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                if (this.theme === 'system') {
+                    document.documentElement.classList.add('theme-transitioning');
+                    document.documentElement.classList.toggle('dark', e.matches);
+                    setTimeout(() => document.documentElement.classList.remove('theme-transitioning'), 300);
+                }
+            });
         },
     };
 }
