@@ -6,8 +6,11 @@
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-bold">Редактирование цели</h1>
         <a href="{{ route('goals.show', $goal->id) }}"
-           class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm">
-            ← К цели
+           class="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm transition">
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+            </svg>
+            К цели
         </a>
     </div>
 

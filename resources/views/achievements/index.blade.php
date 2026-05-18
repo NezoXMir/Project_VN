@@ -3,18 +3,9 @@
 @section('title', 'Достижения — ' . config('app.name'))
 
 @section('content')
-    <div class="flex items-center justify-between mb-6">
-        <div>
-            <h1 class="text-2xl font-bold">Достижения</h1>
-            <p class="text-sm text-gray-500 mt-1">
-                Получено: {{ $unlockedCount }} из {{ $totalCount }}
-            </p>
-        </div>
-
-        <a href="{{ route('dashboard') }}"
-           class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm">
-            ← Дашборд
-        </a>
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold">Достижения</h1>
+        <p class="text-sm text-gray-500 mt-1">Получено: {{ $unlockedCount }} из {{ $totalCount }}</p>
     </div>
 
     {{-- Прогресс по бейджам --}}

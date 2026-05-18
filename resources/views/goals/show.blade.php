@@ -30,54 +30,47 @@
 @endphp
 
 @section('content')
-    <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
-        <a href="{{ route('goals.index') }}"
-           class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm">
-            ← К списку
-        </a>
-
-        <div class="flex flex-wrap items-center gap-2">
-            @if ($goal->status === 'active')
-                <a href="{{ route('goals.edit', $goal->id) }}"
-                   class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm">
-                    Редактировать
-                </a>
-                <form method="POST" action="{{ route('goals.complete', $goal->id) }}">
-                    @csrf
-                    <button type="submit"
-                            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm">
-                        Завершить
-                    </button>
-                </form>
-                <form method="POST" action="{{ route('goals.do-archive', $goal->id) }}">
-                    @csrf
-                    <button type="submit"
-                            class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm">
-                        В архив
-                    </button>
-                </form>
-            @endif
-
-            @if ($goal->status === 'archived')
-                <form method="POST" action="{{ route('goals.restore', $goal->id) }}">
-                    @csrf
-                    <button type="submit"
-                            class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-4 py-2 rounded-lg text-sm">
-                        Восстановить
-                    </button>
-                </form>
-            @endif
-
-            <form method="POST" action="{{ route('goals.destroy', $goal->id) }}"
-                  onsubmit="return confirm('Удалить цель безвозвратно?');">
+    <div class="flex flex-wrap items-center gap-2 mb-6">
+        @if ($goal->status === 'active')
+            <a href="{{ route('goals.edit', $goal->id) }}"
+               class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm">
+                Редактировать
+            </a>
+            <form method="POST" action="{{ route('goals.complete', $goal->id) }}">
                 @csrf
-                @method('DELETE')
                 <button type="submit"
-                        class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm">
-                    Удалить
+                        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm">
+                    Завершить
                 </button>
             </form>
-        </div>
+            <form method="POST" action="{{ route('goals.do-archive', $goal->id) }}">
+                @csrf
+                <button type="submit"
+                        class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm">
+                    В архив
+                </button>
+            </form>
+        @endif
+
+        @if ($goal->status === 'archived')
+            <form method="POST" action="{{ route('goals.restore', $goal->id) }}">
+                @csrf
+                <button type="submit"
+                        class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-4 py-2 rounded-lg text-sm">
+                    Восстановить
+                </button>
+            </form>
+        @endif
+
+        <form method="POST" action="{{ route('goals.destroy', $goal->id) }}"
+              onsubmit="return confirm('Удалить цель безвозвратно?');">
+            @csrf
+            @method('DELETE')
+            <button type="submit"
+                    class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm">
+                Удалить
+            </button>
+        </form>
     </div>
 
     <x-flash-message type="success" />

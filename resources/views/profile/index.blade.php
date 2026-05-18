@@ -3,13 +3,8 @@
 @section('title', 'Профиль — ' . config('app.name'))
 
 @section('content')
-    <div class="flex items-center justify-between mb-6">
+    <div class="mb-6">
         <h1 class="text-2xl font-bold">Профиль</h1>
-
-        <a href="{{ route('dashboard') }}"
-           class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm">
-            ← Дашборд
-        </a>
     </div>
 
     <x-flash-message type="success" />
