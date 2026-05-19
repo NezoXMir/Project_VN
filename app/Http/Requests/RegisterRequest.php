@@ -30,7 +30,7 @@ class RegisterRequest extends FormRequest
             'email.unique' => 'Пользователь с таким email уже существует.',
             'password.required' => 'Укажите пароль.',
             'password.min' => 'Пароль должен быть не короче 8 символов.',
-            'password.mixed_case' => 'Пароль должен содержать хотя бы одну заглавную и одну строчную букву.',
+            'password.mixed' => 'Пароль должен содержать хотя бы одну заглавную и одну строчную букву.',
             'password.numbers' => 'Пароль должен содержать хотя бы одну цифру.',
             'password.confirmed' => 'Пароли не совпадают.',
         ];
