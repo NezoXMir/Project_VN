@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rules\Password;
 
 class RegisterRequest extends FormRequest
 {
@@ -16,7 +17,7 @@ class RegisterRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:120'],
             'email' => ['required', 'string', 'email:filter', 'max:160', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()],
         ];
     }
 
@@ -29,6 +30,8 @@ class RegisterRequest extends FormRequest
             'email.unique' => 'Пользователь с таким email уже существует.',
             'password.required' => 'Укажите пароль.',
             'password.min' => 'Пароль должен быть не короче 8 символов.',
+            'password.mixed_case' => 'Пароль должен содержать хотя бы одну заглавную и одну строчную букву.',
+            'password.numbers' => 'Пароль должен содержать хотя бы одну цифру.',
             'password.confirmed' => 'Пароли не совпадают.',
         ];
     }
