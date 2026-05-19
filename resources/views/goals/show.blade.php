@@ -32,6 +32,15 @@
 @section('content')
     <x-flash-message type="success" />
 
+    <a href="{{ route('goals.index') }}"
+       class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition mb-4">
+        <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+        </svg>
+        <span class="hidden sm:inline">Мои цели</span>
+        <span class="sm:hidden">Назад</span>
+    </a>
+
     <div x-data="goalView({{ $goal->id }}, {{ $progress }}, '{{ $catColor }}', @js($subtasksJson))">
 
         {{-- Toasts разблокированных достижений (fixed, вне потока — не влияет на spacing карточек) --}}
