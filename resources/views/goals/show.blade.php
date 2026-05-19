@@ -30,54 +30,11 @@
 @endphp
 
 @section('content')
-    <div class="flex flex-wrap items-center gap-2 mb-6">
-        @if ($goal->status === 'active')
-            <a href="{{ route('goals.edit', $goal->id) }}"
-               class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm">
-                Редактировать
-            </a>
-            <form method="POST" action="{{ route('goals.complete', $goal->id) }}">
-                @csrf
-                <button type="submit"
-                        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm">
-                    Завершить
-                </button>
-            </form>
-            <form method="POST" action="{{ route('goals.do-archive', $goal->id) }}">
-                @csrf
-                <button type="submit"
-                        class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm">
-                    В архив
-                </button>
-            </form>
-        @endif
-
-        @if ($goal->status === 'archived')
-            <form method="POST" action="{{ route('goals.restore', $goal->id) }}">
-                @csrf
-                <button type="submit"
-                        class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-4 py-2 rounded-lg text-sm">
-                    Восстановить
-                </button>
-            </form>
-        @endif
-
-        <form method="POST" action="{{ route('goals.destroy', $goal->id) }}"
-              onsubmit="return confirm('Удалить цель безвозвратно?');">
-            @csrf
-            @method('DELETE')
-            <button type="submit"
-                    class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm">
-                Удалить
-            </button>
-        </form>
-    </div>
-
     <x-flash-message type="success" />
 
-    <div x-data="goalView({{ $goal->id }}, {{ $progress }}, '{{ $catColor }}', @js($subtasksJson))" class="space-y-6">
+    <div x-data="goalView({{ $goal->id }}, {{ $progress }}, '{{ $catColor }}', @js($subtasksJson))">
 
-        {{-- Toasts разблокированных достижений --}}
+        {{-- Toasts разблокированных достижений (fixed, вне потока — не влияет на spacing карточек) --}}
         <div class="fixed top-4 right-4 z-50 space-y-2 w-[calc(100vw-2rem)] sm:w-auto sm:max-w-sm" style="pointer-events: none;">
             <template x-for="t in toasts" :key="t.id">
                 <div x-transition:enter="transition ease-out duration-300"
@@ -98,15 +55,156 @@
             </template>
         </div>
 
+        <div class="space-y-6">
 
         <x-card padding="p-6" :accent="$catColor">
-            <div class="flex items-start gap-3 mb-4">
-                <div class="flex-1">
+            <div class="flex items-start justify-between gap-3 mb-4">
+                <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2 mb-2">
                         <x-badge :color="$catColor">{{ $catLabel }}</x-badge>
                         <x-badge :tone="$statusTone">{{ $statusLabel }}</x-badge>
                     </div>
-                    <h1 class="text-2xl font-bold">{{ $goal->title }}</h1>
+                    <h1 class="text-xl sm:text-2xl font-bold break-words">{{ $goal->title }}</h1>
+                </div>
+
+                {{-- Action buttons --}}
+                <div class="shrink-0" x-data="{ open: false }">
+
+                    {{-- Desktop: all buttons visible --}}
+                    <div class="hidden sm:flex items-center gap-2">
+                        @if ($goal->status === 'active')
+                            <a href="{{ route('goals.edit', $goal->id) }}"
+                               class="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 3.487a2.25 2.25 0 113.182 3.182L7.5 19.213l-4 1 1-4L16.862 3.487z"/>
+                                </svg>
+                                Редактировать
+                            </a>
+                            <form method="POST" action="{{ route('goals.complete', $goal->id) }}">
+                                @csrf
+                                <button type="submit"
+                                        class="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition">
+                                    <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                    Завершить
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ route('goals.do-archive', $goal->id) }}">
+                                @csrf
+                                <button type="submit"
+                                        class="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium transition">
+                                    <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M20 7H4a1 1 0 00-1 1v1a1 1 0 001 1h16a1 1 0 001-1V8a1 1 0 00-1-1zM5 12v7a1 1 0 001 1h12a1 1 0 001-1v-7"/>
+                                    </svg>
+                                    В архив
+                                </button>
+                            </form>
+                        @endif
+                        @if ($goal->status === 'archived')
+                            <form method="POST" action="{{ route('goals.restore', $goal->id) }}">
+                                @csrf
+                                <button type="submit"
+                                        class="flex items-center gap-1.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-3 py-2 rounded-lg text-sm font-medium transition">
+                                    <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582M20 20v-5h-.581M4.582 9A8 8 0 0120 15M19.419 15A8 8 0 014 9"/>
+                                    </svg>
+                                    Восстановить
+                                </button>
+                            </form>
+                        @endif
+                        <form method="POST" action="{{ route('goals.destroy', $goal->id) }}"
+                              onsubmit="return confirm('Удалить цель безвозвратно?');">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit"
+                                    class="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5-4h4m-4 0a1 1 0 00-1 1v1h6V4a1 1 0 00-1-1m-4 0h4"/>
+                                </svg>
+                                Удалить
+                            </button>
+                        </form>
+                    </div>
+
+                    {{-- Mobile: 3-dot dropdown --}}
+                    <div class="sm:hidden relative">
+                        <button @click="open = !open"
+                                class="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition"
+                                aria-label="Действия">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
+                            </svg>
+                        </button>
+
+                        <div x-show="open"
+                             x-cloak
+                             @click.outside="open = false"
+                             x-transition:enter="transition ease-out duration-100"
+                             x-transition:enter-start="opacity-0 scale-95"
+                             x-transition:enter-end="opacity-100 scale-100"
+                             x-transition:leave="transition ease-in duration-75"
+                             x-transition:leave-start="opacity-100 scale-100"
+                             x-transition:leave-end="opacity-0 scale-95"
+                             class="absolute right-0 top-full mt-1 w-52 bg-white border border-gray-100 rounded-xl shadow-lg z-30 py-1 origin-top-right">
+
+                            @if ($goal->status === 'active')
+                                <a href="{{ route('goals.edit', $goal->id) }}"
+                                   class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
+                                    <svg class="w-4 h-4 text-indigo-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 3.487a2.25 2.25 0 113.182 3.182L7.5 19.213l-4 1 1-4L16.862 3.487z"/>
+                                    </svg>
+                                    Редактировать
+                                </a>
+                                <form method="POST" action="{{ route('goals.complete', $goal->id) }}">
+                                    @csrf
+                                    <button type="submit"
+                                            class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-green-700 hover:bg-gray-50">
+                                        <svg class="w-4 h-4 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                        </svg>
+                                        Завершить
+                                    </button>
+                                </form>
+                                <form method="POST" action="{{ route('goals.do-archive', $goal->id) }}">
+                                    @csrf
+                                    <button type="submit"
+                                            class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
+                                        <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M20 7H4a1 1 0 00-1 1v1a1 1 0 001 1h16a1 1 0 001-1V8a1 1 0 00-1-1zM5 12v7a1 1 0 001 1h12a1 1 0 001-1v-7"/>
+                                        </svg>
+                                        В архив
+                                    </button>
+                                </form>
+                            @endif
+                            @if ($goal->status === 'archived')
+                                <form method="POST" action="{{ route('goals.restore', $goal->id) }}">
+                                    @csrf
+                                    <button type="submit"
+                                            class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-indigo-700 hover:bg-gray-50">
+                                        <svg class="w-4 h-4 text-indigo-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582M20 20v-5h-.581M4.582 9A8 8 0 0120 15M19.419 15A8 8 0 014 9"/>
+                                        </svg>
+                                        Восстановить
+                                    </button>
+                                </form>
+                            @endif
+                            <div class="border-t border-gray-100 my-1"></div>
+                            <form method="POST" action="{{ route('goals.destroy', $goal->id) }}"
+                                  onsubmit="return confirm('Удалить цель безвозвратно?');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit"
+                                        class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50">
+                                    <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5-4h4m-4 0a1 1 0 00-1 1v1h6V4a1 1 0 00-1-1m-4 0h4"/>
+                                    </svg>
+                                    Удалить
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 
@@ -189,9 +287,11 @@
 
                             <button x-show="!subtask.editing"
                                     @click="deleteSubtask(subtask)"
-                                    class="text-xs text-red-600 hover:text-red-700 ml-2"
+                                    class="flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition flex-shrink-0"
                                     title="Удалить подцель со всеми задачами">
-                                удалить
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5-4h4m-4 0a1 1 0 00-1 1v1h6V4a1 1 0 00-1-1m-4 0h4"/>
+                                </svg>
                             </button>
                         </div>
 
@@ -231,39 +331,48 @@
                                     </form>
                                     <button x-show="!task.editing"
                                             @click="deleteTask(subtask, task)"
-                                            class="opacity-0 group-hover:opacity-100 text-xs text-red-500 hover:text-red-700 transition">
-                                        ×
+                                            class="flex items-center justify-center w-7 h-7 rounded-md text-gray-300 hover:text-red-500 hover:bg-red-50 transition flex-shrink-0"
+                                            title="Удалить задачу">
+                                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5-4h4m-4 0a1 1 0 00-1 1v1h6V4a1 1 0 00-1-1m-4 0h4"/>
+                                        </svg>
                                     </button>
                                 </li>
                             </template>
                         </ul>
 
-                        <form @submit.prevent="addTask(subtask)" class="flex items-center gap-2">
+                        <form @submit.prevent="addTask(subtask)" class="flex flex-wrap items-center gap-2">
                             <input type="text"
                                    x-model="subtask.newTaskTitle"
                                    placeholder="+ задача"
                                    maxlength="200"
-                                   class="flex-1 rounded-lg border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 px-3 py-1 border text-sm">
+                                   class="flex-1 min-w-0 rounded-lg border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 px-3 py-1.5 border text-sm">
                             <button type="submit"
                                     :disabled="!subtask.newTaskTitle?.trim()"
-                                    class="text-xs bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 px-3 py-1 rounded-lg">
-                                добавить
+                                    class="flex items-center gap-1.5 text-xs bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 px-3 py-1.5 rounded-lg whitespace-nowrap">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                                </svg>
+                                Добавить задачу
                             </button>
                         </form>
                     </div>
                 </template>
             </div>
 
-            <form @submit.prevent="addSubtask()" class="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100">
+            <form @submit.prevent="addSubtask()" class="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-gray-100">
                 <input type="text"
                        x-model="newSubtaskTitle"
                        placeholder="+ подцель"
                        maxlength="200"
-                       class="flex-1 rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2 border text-sm">
+                       class="flex-1 min-w-0 rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2 border text-sm">
                 <button type="submit"
                         :disabled="!newSubtaskTitle?.trim()"
-                        class="text-sm bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg">
-                    Добавить
+                        class="flex items-center gap-1.5 text-sm bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg whitespace-nowrap">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    Добавить подцель
                 </button>
             </form>
 
@@ -272,6 +381,8 @@
                  class="mt-3 rounded-lg bg-red-50 border border-red-200 text-red-700 px-4 py-2 text-sm"
                  x-text="error"></div>
         </x-card>
+
+        </div>{{-- /space-y-6 cards wrapper --}}
     </div>
 @endsection
 
