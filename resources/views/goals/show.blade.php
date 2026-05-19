@@ -344,7 +344,7 @@
                         <form @submit.prevent="addTask(subtask)" class="flex flex-wrap items-center gap-2">
                             <input type="text"
                                    x-model="subtask.newTaskTitle"
-                                   placeholder="+ задача"
+                                   placeholder="Напишите задачу"
                                    maxlength="200"
                                    class="flex-1 min-w-0 rounded-lg border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 px-3 py-1.5 border text-sm">
                             <button type="submit"
@@ -353,7 +353,7 @@
                                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
                                 </svg>
-                                Добавить задачу
+                                <!-- Добавить задачу -->
                             </button>
                         </form>
                     </div>
@@ -363,7 +363,7 @@
             <form @submit.prevent="addSubtask()" class="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-gray-100">
                 <input type="text"
                        x-model="newSubtaskTitle"
-                       placeholder="+ подцель"
+                       placeholder="Добавьте подцель"
                        maxlength="200"
                        class="flex-1 min-w-0 rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2 border text-sm">
                 <button type="submit"
@@ -372,7 +372,7 @@
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
                     </svg>
-                    Добавить подцель
+                    <!-- Добавить подцель -->
                 </button>
             </form>
 
