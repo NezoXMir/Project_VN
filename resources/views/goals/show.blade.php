@@ -200,12 +200,37 @@
                                 <li class="flex items-center gap-2 group">
                                     <input type="checkbox"
                                            :checked="task.is_done"
+                                           x-show="!task.editing"
                                            @change="toggleTask(task)"
                                            class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                                    <span class="flex-1 text-sm"
+                                    <span x-show="!task.editing"
+                                          class="flex-1 text-sm cursor-pointer"
                                           :class="task.is_done ? 'line-through text-gray-400' : 'text-gray-700'"
-                                          x-text="task.title"></span>
-                                    <button @click="deleteTask(subtask, task)"
+                                          @dblclick="startEditTask(task)"
+                                          x-text="task.title"
+                                          title="Двойной клик — изменить"></span>
+                                    <form x-show="task.editing"
+                                          @submit.prevent="saveTask(task)"
+                                          class="flex items-center gap-2 flex-1">
+                                        <input type="text"
+                                               x-model="task.editTitle"
+                                               x-effect="task.editing && $nextTick(() => $el.focus())"
+                                               @keydown.escape="task.editing = false"
+                                               maxlength="200"
+                                               required
+                                               class="flex-1 rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 px-3 py-1 border text-sm">
+                                        <button type="submit"
+                                                class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded-lg">
+                                            OK
+                                        </button>
+                                        <button type="button"
+                                                @click="task.editing = false"
+                                                class="text-xs text-gray-500 hover:text-gray-700">
+                                            ×
+                                        </button>
+                                    </form>
+                                    <button x-show="!task.editing"
+                                            @click="deleteTask(subtask, task)"
                                             class="opacity-0 group-hover:opacity-100 text-xs text-red-500 hover:text-red-700 transition">
                                         ×
                                     </button>
@@ -257,7 +282,13 @@ function goalView(goalId, initialProgress, color, initialSubtasks) {
         goalId,
         color,
         progress: initialProgress,
-        subtasks: initialSubtasks.map(s => ({ ...s, editing: false, editTitle: s.title, newTaskTitle: '' })),
+        subtasks: initialSubtasks.map(s => ({
+            ...s,
+            editing: false,
+            editTitle: s.title,
+            newTaskTitle: '',
+            tasks: s.tasks.map(t => ({ ...t, editing: false, editTitle: t.title })),
+        })),
         newSubtaskTitle: '',
         error: '',
         toasts: [],
@@ -357,7 +388,7 @@ function goalView(goalId, initialProgress, color, initialSubtasks) {
                     method: 'POST',
                     body: JSON.stringify({ title }),
                 });
-                subtask.tasks.push({ id: data.id, title: data.title, is_done: data.is_done });
+                subtask.tasks.push({ id: data.id, title: data.title, is_done: data.is_done, editing: false, editTitle: data.title });
                 subtask.newTaskTitle = '';
                 this.recomputeProgress();
                 this.error = '';
@@ -385,6 +416,25 @@ function goalView(goalId, initialProgress, color, initialSubtasks) {
 
         dismissToast(id) {
             this.toasts = this.toasts.filter(t => t.id !== id);
+        },
+
+        startEditTask(task) {
+            task.editTitle = task.title;
+            task.editing = true;
+        },
+
+        async saveTask(task) {
+            const title = task.editTitle.trim();
+            if (!title) return;
+            try {
+                const data = await this.req(`/tasks/${task.id}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ title }),
+                });
+                task.title = data.title;
+                task.editing = false;
+                this.error = '';
+            } catch (e) { this.error = e.message; }
         },
 
         async deleteTask(subtask, task) {

@@ -197,7 +197,7 @@ class RecommendationService
         return [
             'type' => 'no_activity',
             'severity' => self::SEVERITY_DANGER,
-            'title' => 'Долгий простой',
+            'title' => 'Простой',
             'message' => $message,
             'action_url' => route('goals.index'),
             'action_label' => 'К целям',
