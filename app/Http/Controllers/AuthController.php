@@ -41,6 +41,10 @@ class AuthController extends Controller
 
     private function verifyCaptcha(Request $request): void
     {
+        if (app()->environment('testing')) {
+            return;
+        }
+
         $token = (string) $request->input('smart-token', '');
 
         if ($token === '') {

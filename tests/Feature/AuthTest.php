@@ -20,11 +20,11 @@ class AuthTest extends TestCase
         $response = $this->post('/register', [
             'name' => 'Иван Тестовый',
             'email' => 'ivan@example.com',
-            'password' => 'pass-strong',
-            'password_confirmation' => 'pass-strong',
+            'password' => 'Pass-strong1',
+            'password_confirmation' => 'Pass-strong1',
         ]);
 
-        $response->assertRedirect('/dashboard');
+        $response->assertRedirect(route('email.verify.notice'));
         $this->assertAuthenticated();
         $this->assertDatabaseHas('users', [
             'email' => 'ivan@example.com',

@@ -54,7 +54,7 @@
                    required
                    minlength="8"
                    class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2 border">
-            <p class="text-xs text-gray-500 mt-1">Минимум 8 символов.</p>
+            <p class="text-xs text-gray-500 mt-1">Минимум 8 символов, один заглавный символ и одна цифра. </p>
         </div>
 
         <div>
