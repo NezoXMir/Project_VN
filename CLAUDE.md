@@ -8,6 +8,12 @@
 - **Chart.js** для графиков (CDN)
 - **Mailtrap / SMTP** для email-напоминаний
 
+## Требования
+
+- PHP 8.2+ с расширениями: `pdo_mysql`, `mbstring`, `dom`, `xml`, `json`, `tokenizer`, `fileinfo`, `gd`
+- Composer 2.x
+- MySQL 8.x
+
 ## Быстрый старт
 
 ```bash
@@ -15,30 +21,52 @@ git clone git@github.com:NezoXMir/Project_VN.git
 cd Project_VN
 
 # 1. PHP-зависимости
-composer update
+# При первом клоне — install (точно по composer.lock, не обновляет пакеты):
+composer install
+# Если vendor/ уже есть и нужно подтянуть новые/обновлённые зависимости после git pull:
+# composer install
+# Если нужно именно поднять версии пакетов (обновить composer.lock):
+# composer update
 
-# 2. Окружение
+# 2. Права на запись (storage и кэш должны быть writable для веб-сервера)
+chmod -R 775 storage bootstrap/cache
+
+# 3. Окружение
 cp .env.example .env
 # Открыть .env, заполнить:
+#   APP_URL=http://localhost:8000       ← обязательно (подписанные ссылки верификации email сломаются без точного URL)
 #   DB_USERNAME, DB_PASSWORD (MySQL)
-#   MAIL_* (по умолчанию log-driver, см. ниже про SMTP)
+#   DB_PORT=8889                        ← для MAMP (стандартный MySQL: 3306)
+#   MAIL_* (по умолчанию log-driver, письма идут в storage/logs/laravel.log)
 #   YANDEX_CAPTCHA_SITEKEY, YANDEX_CAPTCHA_SECRET (для капчи на регистрации)
 
-# 3. Ключ приложения
+# 4. Ключ приложения
 php artisan key:generate
 
-# 4. Создать БД
+# 5. Создать БД
 mysql -u root -p -e "CREATE DATABASE virtual_mentor CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-либо вручную (virtual_mentor -> utf8 -> utf8_general_ci)
+# или вручную (virtual_mentor → utf8mb4 → utf8mb4_unicode_ci)
 
-# 5. Миграции и тестовые данные
+# 6. Миграции и тестовые данные
+# Создаёт все таблицы: users, goals, sessions, cache, jobs, notifications и др.
+# SESSION_DRIVER=database по умолчанию — без migrate сессии работать не будут
 php artisan migrate --seed
 
-# 6. Симлинк для аватаров
+# 7. Симлинк для файлового хранилища
+# Связывает public/storage → storage/app/public
+# Без этого аватары профиля и любые загружаемые файлы не отображаются
 php artisan storage:link
 
-# 7. Dev-сервер
+# 8. Dev-сервер
 php artisan serve   # http://localhost:8000
+```
+
+### При обновлении (после `git pull`)
+
+```bash
+composer install          # подтянет новые зависимости если изменился composer.lock
+php artisan migrate       # применит новые миграции
+php artisan config:clear  # сбросит кэш конфига если менялись файлы в config/
 ```
 
 ## Тестовые аккаунты (после `db:seed`)
